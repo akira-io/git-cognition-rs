@@ -1,9 +1,14 @@
 use crate::Provider;
 use crate::{
-    MissingOwnerName, MissingRepositoryName, PageRequest, ProvidedOwnerName,
-    ProvidedRepositoryName, Repo, RepoBuilder, RepoQueryBuilder, RepositoryListQuery,
-    RepositorySearchQuery, RequestUrl, repo,
+    Issue, IssueListQuery, MissingIssueId, MissingIssueRepo, MissingOwnerName,
+    MissingRepositoryName, PageRequest, ProvidedOwnerName, ProvidedRepositoryName, Repo,
+    RepoBuilder, RepoQueryBuilder, RepositoryListQuery, RepositorySearchQuery, RequestUrl, issue,
+    repo,
 };
+
+mod issues;
+
+pub use issues::{ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VcsManager<Driver> {
@@ -18,6 +23,13 @@ where
         ManagedRepoBuilder {
             manager: self.clone(),
             repo: repo(),
+        }
+    }
+
+    pub fn issue(&self) -> ManagedIssueBuilder<Driver, MissingIssueRepo, MissingIssueId> {
+        ManagedIssueBuilder {
+            manager: self.clone(),
+            issue: issue(),
         }
     }
 
@@ -40,6 +52,10 @@ pub trait ManagedProvider: Clone + Provider {
     fn repo_list_url(&self, query: &RepositoryListQuery) -> RequestUrl;
 
     fn repo_search_url(&self, query: &RepositorySearchQuery) -> RequestUrl;
+
+    fn issue_url(&self, issue: &Issue) -> RequestUrl;
+
+    fn issue_list_url(&self, query: &IssueListQuery) -> RequestUrl;
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]

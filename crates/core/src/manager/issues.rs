@@ -1,0 +1,112 @@
+use crate::{
+    Issue, IssueBuilder, IssueListQuery, IssueQueryBuilder, MissingIssueId, MissingIssueRepo,
+    ProvidedIssueId, ProvidedIssueRepo, Repo, RequestUrl,
+};
+
+use super::{ManagedProvider, ManagedRepo, VcsManager};
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedIssueBuilder<Driver, RepoState, IssueIdState> {
+    pub(super) manager: VcsManager<Driver>,
+    pub(super) issue: IssueBuilder<RepoState, IssueIdState>,
+}
+
+impl<Driver> ManagedIssueBuilder<Driver, MissingIssueRepo, MissingIssueId>
+where
+    Driver: ManagedProvider,
+{
+    pub fn collection(&self) -> ManagedIssueCollection<Driver> {
+        ManagedIssueCollection {
+            manager: self.manager.clone(),
+        }
+    }
+
+    pub fn query(&self) -> IssueQueryBuilder {
+        IssueQueryBuilder
+    }
+}
+
+impl<Driver, IssueIdState> ManagedIssueBuilder<Driver, MissingIssueRepo, IssueIdState>
+where
+    Driver: ManagedProvider,
+{
+    pub fn repo(
+        self,
+        repo: impl Into<Repo>,
+    ) -> ManagedIssueBuilder<Driver, ProvidedIssueRepo, IssueIdState> {
+        ManagedIssueBuilder {
+            manager: self.manager,
+            issue: self.issue.repo(repo),
+        }
+    }
+}
+
+impl<Driver, RepoState> ManagedIssueBuilder<Driver, RepoState, MissingIssueId>
+where
+    Driver: ManagedProvider,
+{
+    pub fn id(
+        self,
+        id: impl Into<String>,
+    ) -> ManagedIssueBuilder<Driver, RepoState, ProvidedIssueId> {
+        ManagedIssueBuilder {
+            manager: self.manager,
+            issue: self.issue.id(id),
+        }
+    }
+}
+
+impl<Driver> ManagedIssueBuilder<Driver, ProvidedIssueRepo, ProvidedIssueId>
+where
+    Driver: ManagedProvider,
+{
+    pub fn build(self) -> ManagedIssue<Driver> {
+        ManagedIssue {
+            manager: self.manager,
+            issue: self.issue.build(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedIssue<Driver> {
+    manager: VcsManager<Driver>,
+    issue: Issue,
+}
+
+impl<Driver> ManagedIssue<Driver>
+where
+    Driver: ManagedProvider,
+{
+    pub fn url(&self) -> RequestUrl {
+        self.manager.driver.issue_url(&self.issue)
+    }
+
+    pub fn issue(&self) -> &Issue {
+        &self.issue
+    }
+
+    pub fn repo(&self) -> &Repo {
+        self.issue.repo()
+    }
+}
+
+impl<Driver> From<ManagedRepo<Driver>> for Repo {
+    fn from(managed_repo: ManagedRepo<Driver>) -> Self {
+        managed_repo.repo
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedIssueCollection<Driver> {
+    manager: VcsManager<Driver>,
+}
+
+impl<Driver> ManagedIssueCollection<Driver>
+where
+    Driver: ManagedProvider,
+{
+    pub fn list(&self, query: &IssueListQuery) -> RequestUrl {
+        self.manager.driver.issue_list_url(query)
+    }
+}
