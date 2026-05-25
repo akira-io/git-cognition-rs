@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::repos::{BoxFuture, Branch, Commit, Repo, RepositoryListQuery, RepositorySearchQuery};
+use crate::repos::{
+    BoxFuture, Branch, Commit, Repo, RepositoryDraft, RepositoryListQuery, RepositoryPatch,
+    RepositorySearchQuery, Visibility,
+};
 use crate::{
     ManagedProvider, Page, Repository, Request, RequestHeader, Response, Transport, VcsResult,
     error, request, transport_not_configured,
@@ -13,9 +16,135 @@ pub trait Repos: Send + Sync {
 
     fn search(&self, query: RepositorySearchQuery) -> BoxFuture<'_, VcsResult<Page<Repository>>>;
 
+    fn create(&self, draft: RepositoryDraft) -> BoxFuture<'_, VcsResult<Repository>>;
+
+    fn update(&self, patch: RepositoryPatch) -> BoxFuture<'_, VcsResult<Repository>>;
+
+    fn delete(&self, repo: Repo) -> BoxFuture<'_, VcsResult<()>>;
+
     fn branches(&self, repo: Repo) -> BoxFuture<'_, VcsResult<Page<Branch>>>;
 
     fn commits(&self, repo: Repo) -> BoxFuture<'_, VcsResult<Page<Commit>>>;
+}
+
+pub trait ReposFluent {
+    fn create(self) -> RepoCreateOperation;
+
+    fn update(self) -> RepoUpdateOperation;
+}
+
+impl ReposFluent for Box<dyn Repos> {
+    fn create(self) -> RepoCreateOperation {
+        RepoCreateOperation {
+            repos: self,
+            repo: None,
+            visibility: Visibility::Private,
+            description: None,
+        }
+    }
+
+    fn update(self) -> RepoUpdateOperation {
+        RepoUpdateOperation {
+            repos: self,
+            repo: None,
+            visibility: None,
+            description: None,
+        }
+    }
+}
+
+pub struct RepoCreateOperation {
+    repos: Box<dyn Repos>,
+    repo: Option<Repo>,
+    visibility: Visibility,
+    description: Option<String>,
+}
+
+impl RepoCreateOperation {
+    pub fn location(mut self, repo: Repo) -> Self {
+        self.repo = Some(repo);
+        self
+    }
+
+    pub fn repo(self, repo: Repo) -> Self {
+        self.location(repo)
+    }
+
+    pub fn visibility(mut self, visibility: Visibility) -> Self {
+        self.visibility = visibility;
+        self
+    }
+
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    pub fn send(self) -> BoxFuture<'static, VcsResult<Repository>> {
+        let Some(repo) = self.repo else {
+            return Box::pin(async { Err(crate::error().invalid_input("repository is required")) });
+        };
+
+        let mut draft = repo.draft().visibility(self.visibility);
+
+        if let Some(description) = self.description {
+            draft = draft.description(description);
+        }
+
+        let repos = self.repos;
+        let draft = draft.get();
+
+        Box::pin(async move { Repos::create(&*repos, draft).await })
+    }
+}
+
+pub struct RepoUpdateOperation {
+    repos: Box<dyn Repos>,
+    repo: Option<Repo>,
+    visibility: Option<Visibility>,
+    description: Option<String>,
+}
+
+impl RepoUpdateOperation {
+    pub fn location(mut self, repo: Repo) -> Self {
+        self.repo = Some(repo);
+        self
+    }
+
+    pub fn repo(self, repo: Repo) -> Self {
+        self.location(repo)
+    }
+
+    pub fn visibility(mut self, visibility: Visibility) -> Self {
+        self.visibility = Some(visibility);
+        self
+    }
+
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    pub fn send(self) -> BoxFuture<'static, VcsResult<Repository>> {
+        let Some(repo) = self.repo else {
+            return Box::pin(async { Err(crate::error().invalid_input("repository is required")) });
+        };
+
+        let mut patch = repo.patch();
+
+        if let Some(visibility) = self.visibility {
+            patch = patch.visibility(visibility);
+        }
+
+        if let Some(description) = self.description {
+            patch = patch.description(description);
+        }
+
+        let repos = self.repos;
+        let patch = patch.get();
+
+        Box::pin(async move { Repos::update(&*repos, patch).await })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -31,6 +160,18 @@ impl Repos for TransportNotConfiguredRepos {
     }
 
     fn search(&self, _query: RepositorySearchQuery) -> BoxFuture<'_, VcsResult<Page<Repository>>> {
+        transport_not_configured()
+    }
+
+    fn create(&self, _draft: RepositoryDraft) -> BoxFuture<'_, VcsResult<Repository>> {
+        transport_not_configured()
+    }
+
+    fn update(&self, _patch: RepositoryPatch) -> BoxFuture<'_, VcsResult<Repository>> {
+        transport_not_configured()
+    }
+
+    fn delete(&self, _repo: Repo) -> BoxFuture<'_, VcsResult<()>> {
         transport_not_configured()
     }
 
@@ -133,6 +274,33 @@ where
             let response = self.send_request(request).await?;
 
             self.mapper.repositories(&response)
+        })
+    }
+
+    fn create(&self, draft: RepositoryDraft) -> BoxFuture<'_, VcsResult<Repository>> {
+        Box::pin(async move {
+            let request = self.driver.repo_create_request(&draft);
+            let response = self.send_request(request).await?;
+
+            self.mapper.repository(draft.repo(), &response)
+        })
+    }
+
+    fn update(&self, patch: RepositoryPatch) -> BoxFuture<'_, VcsResult<Repository>> {
+        Box::pin(async move {
+            let request = self.driver.repo_update_request(&patch);
+            let response = self.send_request(request).await?;
+
+            self.mapper.repository(patch.repo(), &response)
+        })
+    }
+
+    fn delete(&self, repo: Repo) -> BoxFuture<'_, VcsResult<()>> {
+        Box::pin(async move {
+            let request = self.driver.repo_delete_request(&repo);
+            self.send_request(request).await?;
+
+            Ok(())
         })
     }
 

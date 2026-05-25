@@ -1,7 +1,7 @@
 use vcs_provider_bitbucket::bitbucket;
 use vcs_provider_core::{
-    LifecycleState, Repo, SingleResponseTransport, Visibility, provider_response, repo,
-    run_async_test,
+    LifecycleState, Repo, ReposFluent, SingleResponseTransport, Visibility, provider_response,
+    repo, run_async_test,
 };
 
 #[test]
@@ -40,6 +40,59 @@ fn bitbucket_client_hydrates_repository_list() -> vcs_provider_core::VcsResult<(
         assert_eq!(repositories.items()[0].visibility(), &Visibility::Private);
 
         Ok(())
+    })
+}
+
+#[test]
+fn bitbucket_client_hydrates_repository_create() -> vcs_provider_core::VcsResult<()> {
+    run_async_test(async {
+        let repository = bitbucket()
+            .client(provider_response_body(
+                r#"{"full_name":"akira-io/vcs-providers-rs","is_private":true}"#,
+            ))
+            .repos()
+            .create()
+            .location(repository_location())
+            .visibility(Visibility::Private)
+            .send()
+            .await?;
+
+        assert_eq!(repository.provider().as_str(), "bitbucket");
+        assert_eq!(repository.visibility(), &Visibility::Private);
+
+        Ok(())
+    })
+}
+
+#[test]
+fn bitbucket_client_hydrates_repository_update() -> vcs_provider_core::VcsResult<()> {
+    run_async_test(async {
+        let repository = bitbucket()
+            .client(provider_response_body(
+                r#"{"full_name":"akira-io/vcs-providers-rs","is_private":false}"#,
+            ))
+            .repos()
+            .update()
+            .location(repository_location())
+            .visibility(Visibility::Public)
+            .send()
+            .await?;
+
+        assert_eq!(repository.provider().as_str(), "bitbucket");
+        assert_eq!(repository.visibility(), &Visibility::Public);
+
+        Ok(())
+    })
+}
+
+#[test]
+fn bitbucket_client_deletes_repository() -> vcs_provider_core::VcsResult<()> {
+    run_async_test(async {
+        bitbucket()
+            .client(provider_response().status(204).get())
+            .repos()
+            .delete(repository_location())
+            .await
     })
 }
 
