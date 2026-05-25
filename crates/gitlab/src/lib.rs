@@ -1,9 +1,9 @@
 use vcs_provider_core::{
-    AuthHeaderStyle, AuthKind, Capability, CodeReviews, Issues, ManagedProvider, MissingOwnerName,
-    MissingRepositoryName, Pipelines, Provider, ProviderDescriptor, ProviderId, Releases, Repos,
-    TransportNotConfiguredCodeReviews, TransportNotConfiguredIssues,
-    TransportNotConfiguredPipelines, TransportNotConfiguredReleases, TransportNotConfiguredRepos,
-    capabilities,
+    AuthHeaderStyle, AuthKind, Capability, CodeReviews, Issues, ManagedIssueProvider,
+    ManagedProvider, MissingOwnerName, MissingRepositoryName, Pipelines, Provider,
+    ProviderDescriptor, ProviderId, Releases, Repos, TransportNotConfiguredCodeReviews,
+    TransportNotConfiguredIssues, TransportNotConfiguredPipelines, TransportNotConfiguredReleases,
+    TransportNotConfiguredRepos, capabilities,
 };
 
 mod issues;
@@ -75,7 +75,9 @@ impl ManagedProvider for GitLabProvider {
     ) -> vcs_provider_core::RequestUrl {
         GitLabRepoCollection::make(DEFAULT_BASE_URL).search(query)
     }
+}
 
+impl ManagedIssueProvider for GitLabProvider {
     fn issue_url(&self, issue: &vcs_provider_core::Issue) -> vcs_provider_core::RequestUrl {
         GitLabIssue::make(DEFAULT_BASE_URL, issue.clone()).url()
     }

@@ -1,14 +1,14 @@
 use crate::Provider;
 use crate::{
     Issue, IssueListQuery, MissingIssueId, MissingIssueRepo, MissingOwnerName,
-    MissingRepositoryName, PageRequest, ProvidedOwnerName, ProvidedRepositoryName, Repo,
-    RepoBuilder, RepoQueryBuilder, RepositoryListQuery, RepositorySearchQuery, RequestUrl, issue,
-    repo,
+    MissingRepositoryName, PageRequest, ProvidedIssueId, ProvidedIssueRepo, ProvidedOwnerName,
+    ProvidedRepositoryName, Repo, RepoBuilder, RepoQueryBuilder, RepositoryListQuery,
+    RepositorySearchQuery, RequestUrl, issue, repo,
 };
 
 mod issues;
 
-pub use issues::{ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection};
+pub use issues::{ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection, ManagedRepoIssues};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VcsManager<Driver> {
@@ -26,7 +26,10 @@ where
         }
     }
 
-    pub fn issue(&self) -> ManagedIssueBuilder<Driver, MissingIssueRepo, MissingIssueId> {
+    pub fn issue(&self) -> ManagedIssueBuilder<Driver, MissingIssueRepo, MissingIssueId>
+    where
+        Driver: ManagedIssueProvider,
+    {
         ManagedIssueBuilder {
             manager: self.clone(),
             issue: issue(),
@@ -52,7 +55,9 @@ pub trait ManagedProvider: Clone + Provider {
     fn repo_list_url(&self, query: &RepositoryListQuery) -> RequestUrl;
 
     fn repo_search_url(&self, query: &RepositorySearchQuery) -> RequestUrl;
+}
 
+pub trait ManagedIssueProvider: ManagedProvider {
     fn issue_url(&self, issue: &Issue) -> RequestUrl;
 
     fn issue_list_url(&self, query: &IssueListQuery) -> RequestUrl;
@@ -143,6 +148,28 @@ where
 {
     pub fn build(self) -> ManagedRepo<Driver> {
         ManagedRepo {
+            manager: self.manager,
+            repo: self.repo.build(),
+        }
+    }
+}
+
+impl<Driver> ManagedRepoBuilder<Driver, ProvidedOwnerName, ProvidedRepositoryName>
+where
+    Driver: ManagedIssueProvider,
+{
+    pub fn issue(
+        self,
+        id: impl Into<String>,
+    ) -> ManagedIssueBuilder<Driver, ProvidedIssueRepo, ProvidedIssueId> {
+        ManagedIssueBuilder {
+            manager: self.manager,
+            issue: issue().repo(self.repo.build()).id(id),
+        }
+    }
+
+    pub fn issues(self) -> ManagedRepoIssues<Driver> {
+        ManagedRepoIssues {
             manager: self.manager,
             repo: self.repo.build(),
         }

@@ -6,10 +6,8 @@ use vcs_provider_core::{
     capabilities,
 };
 
-mod issues;
 mod repos;
 
-pub use issues::{BitbucketIssue, BitbucketIssueCollection};
 pub use repos::{BitbucketRepo, BitbucketRepoCollection};
 
 pub const PROVIDER_ID: &str = "bitbucket";
@@ -24,16 +22,6 @@ impl BitbucketProvider {
         &self,
     ) -> vcs_provider_core::ManagedRepoBuilder<Self, MissingOwnerName, MissingRepositoryName> {
         vcs_provider_core::vcs(*self).repo()
-    }
-
-    pub fn issue(
-        &self,
-    ) -> vcs_provider_core::ManagedIssueBuilder<
-        Self,
-        vcs_provider_core::MissingIssueRepo,
-        vcs_provider_core::MissingIssueId,
-    > {
-        vcs_provider_core::vcs(*self).issue()
     }
 
     pub fn pagination(&self) -> vcs_provider_core::PaginationBuilder {
@@ -75,17 +63,6 @@ impl ManagedProvider for BitbucketProvider {
     ) -> vcs_provider_core::RequestUrl {
         BitbucketRepoCollection::make(DEFAULT_BASE_URL).search(query)
     }
-
-    fn issue_url(&self, issue: &vcs_provider_core::Issue) -> vcs_provider_core::RequestUrl {
-        BitbucketIssue::make(DEFAULT_BASE_URL, issue.clone()).url()
-    }
-
-    fn issue_list_url(
-        &self,
-        query: &vcs_provider_core::IssueListQuery,
-    ) -> vcs_provider_core::RequestUrl {
-        BitbucketIssueCollection::make(DEFAULT_BASE_URL).list(query)
-    }
 }
 
 impl Provider for BitbucketProvider {
@@ -95,7 +72,6 @@ impl Provider for BitbucketProvider {
             DISPLAY_NAME,
             capabilities().make([
                 Capability::Repos,
-                Capability::Issues,
                 Capability::CodeReviews,
                 Capability::Pipelines,
                 Capability::Webhooks,

@@ -5,6 +5,37 @@ Issue request builders translate universal issue resources into provider-specifi
 Use the provider facade when the provider is known:
 
 ```rust
+let issue = github()
+    .repo()
+    .owner("akira-io")
+    .name("vcs-providers-rs")
+    .issue("42")
+    .build();
+
+let url = issue.url();
+```
+
+Use the collection builder for list URLs:
+
+```rust
+let page = gitlab()
+    .pagination()
+    .request()
+    .limit(50)
+    .build();
+
+let issues = gitlab()
+    .repo()
+    .owner("akira-io")
+    .name("vcs-providers-rs")
+    .issues();
+
+let url = issues.url(Some(&page));
+```
+
+If the repo already exists as a variable, pass it into the issue builder:
+
+```rust
 let repo = github()
     .repo()
     .owner("akira-io")
@@ -16,48 +47,22 @@ let issue = github()
     .repo(repo)
     .id("42")
     .build();
-
-let url = issue.url();
-```
-
-Use the collection builder for list URLs:
-
-```rust
-let repo = gitlab()
-    .repo()
-    .owner("akira-io")
-    .name("vcs-providers-rs")
-    .build();
-
-let issue = gitlab().issue();
-let page = gitlab()
-    .pagination()
-    .request()
-    .limit(50)
-    .build();
-let query = issue.query().list(repo, Some(page));
-let url = issue.collection().list(&query);
 ```
 
 Use `vcs(driver)` when the provider is injected:
 
 ```rust
-let provider = vcs(bitbucket());
+let provider = vcs(gitlab());
 
-let repo = provider
+let issue = provider
     .repo()
     .owner("akira-io")
     .name("vcs-providers-rs")
-    .build();
-
-let issue = provider
-    .issue()
-    .repo(repo)
-    .id("42")
+    .issue("42")
     .build();
 ```
 
-## Provider Shapes
+## Provider Support
 
 GitHub issues use the repository path:
 
@@ -73,11 +78,11 @@ GitLab issues use the URL-encoded project path:
 /api/v4/projects/{owner%2Frepo}/issues
 ```
 
-Bitbucket Cloud issues use workspace and repository slug:
-
-```text
-/2.0/repositories/{workspace}/{repo_slug}/issues/{issue}
-/2.0/repositories/{workspace}/{repo_slug}/issues
-```
-
 Pagination remains provider-neutral in the caller. Providers map it to their own query names.
+
+Bitbucket Cloud is intentionally not exposed through this facade.
+Bitbucket Cloud still has legacy issue tracker endpoints, but Atlassian has announced that
+native Bitbucket Cloud Issues are being removed in August 2026. The Bitbucket provider does not
+advertise `Capability::Issues` and does not implement `ManagedIssueProvider`. Jira-backed work
+tracking should be modeled as a separate extension instead of leaking Jira behavior into the
+provider-neutral issue contract.

@@ -45,9 +45,9 @@ pub use issues::{
     MissingIssueRepo, ProvidedIssueId, ProvidedIssueRepo, TransportNotConfiguredIssues,
 };
 pub use manager::{
-    ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection, ManagedProvider, ManagedRepo,
-    ManagedRepoBuilder, ManagedRepoCollection, VcsManager, VcsManagerBuilder,
-    VcsManagerWithDriverBuilder,
+    ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection, ManagedIssueProvider,
+    ManagedProvider, ManagedRepo, ManagedRepoBuilder, ManagedRepoCollection, ManagedRepoIssues,
+    VcsManager, VcsManagerBuilder, VcsManagerWithDriverBuilder,
 };
 pub use middleware::{
     HeaderMiddleware, Middleware, MissingTransport, ProvidedTransport, TransportPipeline,
