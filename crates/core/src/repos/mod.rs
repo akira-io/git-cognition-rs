@@ -7,7 +7,8 @@ mod queries;
 mod resources;
 
 pub use contracts::{
-    Repos, RepositoryResponseMapper, TransportBackedRepos, TransportNotConfiguredRepos,
+    RepoCreateOperation, RepoUpdateOperation, Repos, ReposFluent, RepositoryResponseMapper,
+    TransportBackedRepos, TransportNotConfiguredRepos,
 };
 pub use names::{
     MissingOwnerName, MissingRepositoryName, OwnerName, ProvidedOwnerName, ProvidedRepositoryName,

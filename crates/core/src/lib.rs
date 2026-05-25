@@ -87,10 +87,10 @@ pub use repos::{
     BoxFuture, Branch, Commit, LifecycleState, MissingLifecycleState, MissingOwnerName,
     MissingRepositoryName, MissingVisibility, OwnerName, ProvidedLifecycleState, ProvidedOwnerName,
     ProvidedProviderId, ProvidedRepositoryName, ProvidedVisibility, Repo, RepoBuilder,
-    RepoQueryBuilder, Repos, Repository, RepositoryBuilder, RepositoryDraft,
-    RepositoryDraftBuilder, RepositoryListQuery, RepositoryName, RepositoryPatch,
-    RepositoryPatchBuilder, RepositoryResponseMapper, RepositorySearchQuery, TransportBackedRepos,
-    TransportNotConfiguredRepos, Visibility,
+    RepoCreateOperation, RepoQueryBuilder, RepoUpdateOperation, Repos, ReposFluent, Repository,
+    RepositoryBuilder, RepositoryDraft, RepositoryDraftBuilder, RepositoryListQuery,
+    RepositoryName, RepositoryPatch, RepositoryPatchBuilder, RepositoryResponseMapper,
+    RepositorySearchQuery, TransportBackedRepos, TransportNotConfiguredRepos, Visibility,
 };
 pub use runtime::{
     IntoProvider, MissingProviderTransport, ProvidedProviderTransport, ProviderRequestBuilder,

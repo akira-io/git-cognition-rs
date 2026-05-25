@@ -1,6 +1,6 @@
 use vcs_provider_core::{
-    LifecycleState, Repo, SingleResponseTransport, Visibility, provider_response, repo,
-    run_async_test,
+    LifecycleState, Repo, ReposFluent, SingleResponseTransport, Visibility, provider_response,
+    repo, run_async_test,
 };
 use vcs_provider_gitlab::gitlab;
 
@@ -59,9 +59,10 @@ fn gitlab_client_hydrates_repository_create() -> vcs_provider_core::VcsResult<()
                 r#"{"path_with_namespace":"akira-io/vcs-providers-rs","visibility":"private","archived":false}"#,
             ))
             .repos()
-            .create(
-                repository_location().draft().visibility(Visibility::Private).get(),
-            )
+            .create()
+            .location(repository_location())
+            .visibility(Visibility::Private)
+            .send()
             .await?;
 
         assert_eq!(repository.provider().as_str(), "gitlab");
@@ -79,9 +80,10 @@ fn gitlab_client_hydrates_repository_update() -> vcs_provider_core::VcsResult<()
                 r#"{"path_with_namespace":"akira-io/vcs-providers-rs","visibility":"public","archived":false}"#,
             ))
             .repos()
-            .update(
-                repository_location().patch().visibility(Visibility::Public).get(),
-            )
+            .update()
+            .location(repository_location())
+            .visibility(Visibility::Public)
+            .send()
             .await?;
 
         assert_eq!(repository.provider().as_str(), "gitlab");

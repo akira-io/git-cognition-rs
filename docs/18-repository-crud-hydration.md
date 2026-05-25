@@ -9,7 +9,10 @@ let repository = github()
     .client(http().transport().get()?)
     .auth(auth().personal_access_token("token"))
     .repos()
-    .create(repo.draft().visibility(Visibility::Private).get())
+    .create()
+    .location(repo)
+    .visibility(Visibility::Private)
+    .send()
     .await?;
 ```
 

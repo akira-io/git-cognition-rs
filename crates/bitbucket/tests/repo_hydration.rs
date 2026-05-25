@@ -1,7 +1,7 @@
 use vcs_provider_bitbucket::bitbucket;
 use vcs_provider_core::{
-    LifecycleState, Repo, SingleResponseTransport, Visibility, provider_response, repo,
-    run_async_test,
+    LifecycleState, Repo, ReposFluent, SingleResponseTransport, Visibility, provider_response,
+    repo, run_async_test,
 };
 
 #[test]
@@ -51,12 +51,10 @@ fn bitbucket_client_hydrates_repository_create() -> vcs_provider_core::VcsResult
                 r#"{"full_name":"akira-io/vcs-providers-rs","is_private":true}"#,
             ))
             .repos()
-            .create(
-                repository_location()
-                    .draft()
-                    .visibility(Visibility::Private)
-                    .get(),
-            )
+            .create()
+            .location(repository_location())
+            .visibility(Visibility::Private)
+            .send()
             .await?;
 
         assert_eq!(repository.provider().as_str(), "bitbucket");
@@ -74,12 +72,10 @@ fn bitbucket_client_hydrates_repository_update() -> vcs_provider_core::VcsResult
                 r#"{"full_name":"akira-io/vcs-providers-rs","is_private":false}"#,
             ))
             .repos()
-            .update(
-                repository_location()
-                    .patch()
-                    .visibility(Visibility::Public)
-                    .get(),
-            )
+            .update()
+            .location(repository_location())
+            .visibility(Visibility::Public)
+            .send()
             .await?;
 
         assert_eq!(repository.provider().as_str(), "bitbucket");
