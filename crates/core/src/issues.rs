@@ -93,10 +93,41 @@ impl IssueBuilder<ProvidedIssueRepo, ProvidedIssueId> {
     }
 }
 
+impl IssueBuilder<MissingIssueRepo, MissingIssueId> {
+    pub fn query(self) -> IssueQueryBuilder {
+        IssueQueryBuilder
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct IssueQueryBuilder;
+
+impl IssueQueryBuilder {
+    pub fn list(self, repo: Repo, page: Option<PageRequest>) -> IssueListQuery {
+        IssueListQuery { repo, page }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct IssueListQuery {
+    repo: Repo,
+    page: Option<PageRequest>,
+}
+
+impl IssueListQuery {
+    pub fn repo(&self) -> &Repo {
+        &self.repo
+    }
+
+    pub fn page(&self) -> Option<&PageRequest> {
+        self.page.as_ref()
+    }
+}
+
 pub trait Issues: Send + Sync {
     fn get(&self, repo: Repo, id: IssueId) -> BoxFuture<'_, VcsResult<Issue>>;
 
-    fn list(&self, repo: Repo, page: Option<PageRequest>) -> BoxFuture<'_, VcsResult<Page<Issue>>>;
+    fn list(&self, query: IssueListQuery) -> BoxFuture<'_, VcsResult<Page<Issue>>>;
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -107,11 +138,7 @@ impl Issues for TransportNotConfiguredIssues {
         transport_not_configured()
     }
 
-    fn list(
-        &self,
-        _repo: Repo,
-        _page: Option<PageRequest>,
-    ) -> BoxFuture<'_, VcsResult<Page<Issue>>> {
+    fn list(&self, _query: IssueListQuery) -> BoxFuture<'_, VcsResult<Page<Issue>>> {
         transport_not_configured()
     }
 }
