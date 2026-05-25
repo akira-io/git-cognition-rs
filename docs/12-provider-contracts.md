@@ -66,6 +66,36 @@ let release = release()
     .build();
 ```
 
+List operations use query objects. That keeps the contracts stable when filters are added later:
+
+```rust
+let repo = repo()
+    .owner("akira-io")
+    .name("vcs-providers-rs")
+    .build();
+
+let page = pagination()
+    .request()
+    .limit(50)
+    .build();
+
+let issue_query = issue()
+    .query()
+    .list(repo.clone(), Some(page.clone()));
+
+let code_review_query = code_review()
+    .query()
+    .list(repo.clone(), Some(page.clone()));
+
+let pipeline_query = pipeline()
+    .query()
+    .list(repo.clone(), Some(page.clone()));
+
+let release_query = release()
+    .query()
+    .list(repo, Some(page));
+```
+
 ## Capabilities
 
 Capabilities are runtime information, not compile-time assumptions:

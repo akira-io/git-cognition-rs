@@ -101,6 +101,37 @@ impl CodeReviewBuilder<ProvidedCodeReviewRepo, ProvidedCodeReviewId> {
     }
 }
 
+impl CodeReviewBuilder<MissingCodeReviewRepo, MissingCodeReviewId> {
+    pub fn query(self) -> CodeReviewQueryBuilder {
+        CodeReviewQueryBuilder
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct CodeReviewQueryBuilder;
+
+impl CodeReviewQueryBuilder {
+    pub fn list(self, repo: Repo, page: Option<PageRequest>) -> CodeReviewListQuery {
+        CodeReviewListQuery { repo, page }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct CodeReviewListQuery {
+    repo: Repo,
+    page: Option<PageRequest>,
+}
+
+impl CodeReviewListQuery {
+    pub fn repo(&self) -> &Repo {
+        &self.repo
+    }
+
+    pub fn page(&self) -> Option<&PageRequest> {
+        self.page.as_ref()
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct CodeReviewDraft {
     repo: Repo,
@@ -191,11 +222,7 @@ impl CodeReviewDraftBuilder<ProvidedCodeReviewDraftRepo, ProvidedCodeReviewTitle
 pub trait CodeReviews: Send + Sync {
     fn get(&self, repo: Repo, id: CodeReviewId) -> BoxFuture<'_, VcsResult<CodeReview>>;
 
-    fn list(
-        &self,
-        repo: Repo,
-        page: Option<PageRequest>,
-    ) -> BoxFuture<'_, VcsResult<Page<CodeReview>>>;
+    fn list(&self, query: CodeReviewListQuery) -> BoxFuture<'_, VcsResult<Page<CodeReview>>>;
 
     fn create(&self, draft: CodeReviewDraft) -> BoxFuture<'_, VcsResult<CodeReview>>;
 
@@ -212,11 +239,7 @@ impl CodeReviews for TransportNotConfiguredCodeReviews {
         transport_not_configured()
     }
 
-    fn list(
-        &self,
-        _repo: Repo,
-        _page: Option<PageRequest>,
-    ) -> BoxFuture<'_, VcsResult<Page<CodeReview>>> {
+    fn list(&self, _query: CodeReviewListQuery) -> BoxFuture<'_, VcsResult<Page<CodeReview>>> {
         transport_not_configured()
     }
 

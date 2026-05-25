@@ -93,14 +93,41 @@ impl ReleaseBuilder<ProvidedReleaseRepo, ProvidedReleaseId> {
     }
 }
 
+impl ReleaseBuilder<MissingReleaseRepo, MissingReleaseId> {
+    pub fn query(self) -> ReleaseQueryBuilder {
+        ReleaseQueryBuilder
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ReleaseQueryBuilder;
+
+impl ReleaseQueryBuilder {
+    pub fn list(self, repo: Repo, page: Option<PageRequest>) -> ReleaseListQuery {
+        ReleaseListQuery { repo, page }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ReleaseListQuery {
+    repo: Repo,
+    page: Option<PageRequest>,
+}
+
+impl ReleaseListQuery {
+    pub fn repo(&self) -> &Repo {
+        &self.repo
+    }
+
+    pub fn page(&self) -> Option<&PageRequest> {
+        self.page.as_ref()
+    }
+}
+
 pub trait Releases: Send + Sync {
     fn get(&self, repo: Repo, id: ReleaseId) -> BoxFuture<'_, VcsResult<Release>>;
 
-    fn list(
-        &self,
-        repo: Repo,
-        page: Option<PageRequest>,
-    ) -> BoxFuture<'_, VcsResult<Page<Release>>>;
+    fn list(&self, query: ReleaseListQuery) -> BoxFuture<'_, VcsResult<Page<Release>>>;
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -111,11 +138,7 @@ impl Releases for TransportNotConfiguredReleases {
         transport_not_configured()
     }
 
-    fn list(
-        &self,
-        _repo: Repo,
-        _page: Option<PageRequest>,
-    ) -> BoxFuture<'_, VcsResult<Page<Release>>> {
+    fn list(&self, _query: ReleaseListQuery) -> BoxFuture<'_, VcsResult<Page<Release>>> {
         transport_not_configured()
     }
 }

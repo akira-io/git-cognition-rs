@@ -28,9 +28,10 @@ pub use auth::{
 };
 pub use code_reviews::{
     CodeReview, CodeReviewBuilder, CodeReviewDraft, CodeReviewDraftBuilder, CodeReviewId,
-    CodeReviews, MissingCodeReviewDraftRepo, MissingCodeReviewId, MissingCodeReviewRepo,
-    MissingCodeReviewTitle, ProvidedCodeReviewDraftRepo, ProvidedCodeReviewId,
-    ProvidedCodeReviewRepo, ProvidedCodeReviewTitle, TransportNotConfiguredCodeReviews,
+    CodeReviewListQuery, CodeReviewQueryBuilder, CodeReviews, MissingCodeReviewDraftRepo,
+    MissingCodeReviewId, MissingCodeReviewRepo, MissingCodeReviewTitle,
+    ProvidedCodeReviewDraftRepo, ProvidedCodeReviewId, ProvidedCodeReviewRepo,
+    ProvidedCodeReviewTitle, TransportNotConfiguredCodeReviews,
 };
 pub(crate) use errors::transport_not_configured;
 pub use errors::{ErrorBuilder, ErrorKind, VcsError, VcsResult};
@@ -40,8 +41,8 @@ pub use helpers::{
     runtime, telemetry, url, vcs,
 };
 pub use issues::{
-    Issue, IssueBuilder, IssueId, Issues, MissingIssueId, MissingIssueRepo, ProvidedIssueId,
-    ProvidedIssueRepo, TransportNotConfiguredIssues,
+    Issue, IssueBuilder, IssueId, IssueListQuery, IssueQueryBuilder, Issues, MissingIssueId,
+    MissingIssueRepo, ProvidedIssueId, ProvidedIssueRepo, TransportNotConfiguredIssues,
 };
 pub use manager::{
     ManagedProvider, ManagedRepo, ManagedRepoBuilder, ManagedRepoCollection, VcsManager,
@@ -55,8 +56,9 @@ pub use pagination::{
     Page, PageBuilder, PageCursor, PageLimit, PageRequest, PageRequestBuilder, PaginationBuilder,
 };
 pub use pipelines::{
-    MissingPipelineId, MissingPipelineRepo, Pipeline, PipelineBuilder, PipelineId, Pipelines,
-    ProvidedPipelineId, ProvidedPipelineRepo, TransportNotConfiguredPipelines,
+    MissingPipelineId, MissingPipelineRepo, Pipeline, PipelineBuilder, PipelineId,
+    PipelineListQuery, PipelineQueryBuilder, Pipelines, ProvidedPipelineId, ProvidedPipelineRepo,
+    TransportNotConfiguredPipelines,
 };
 pub use rate_limit::{
     RateLimitBuilder, RateLimitCost, RateLimitHeaderName, RateLimitHeaderProfile,
@@ -66,7 +68,8 @@ pub use rate_limit::{
 pub use registry::{ProviderRegistry, ProviderRegistryBuilder};
 pub use releases::{
     MissingReleaseId, MissingReleaseRepo, ProvidedReleaseId, ProvidedReleaseRepo, Release,
-    ReleaseBuilder, ReleaseId, Releases, TransportNotConfiguredReleases,
+    ReleaseBuilder, ReleaseId, ReleaseListQuery, ReleaseQueryBuilder, Releases,
+    TransportNotConfiguredReleases,
 };
 pub use repos::{
     BoxFuture, Branch, Commit, LifecycleState, MissingLifecycleState, MissingOwnerName,

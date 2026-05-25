@@ -8,12 +8,15 @@ use vcs_provider_core::{
 #[test]
 fn issue_contract_reports_unconfigured_transport() -> VcsResult<()> {
     let repo = repo().owner("akira-io").name("vcs-providers-rs").build();
-    let issue = issue().repo(repo.clone()).id("1").build();
+    let issue_resource = issue().repo(repo.clone()).id("1").build();
+    let list_query = issue().query().list(repo.clone(), None);
     let result =
         futures::executor::block_on(TransportNotConfiguredIssues.get(repo, IssueId::make("1")));
+    let list_result = futures::executor::block_on(TransportNotConfiguredIssues.list(list_query));
 
-    assert_eq!(issue.id().as_str(), "1");
+    assert_eq!(issue_resource.id().as_str(), "1");
     assert_eq!(result, Err(VcsError::TransportNotConfigured));
+    assert_eq!(list_result, Err(VcsError::TransportNotConfigured));
 
     Ok(())
 }
@@ -26,7 +29,8 @@ fn code_review_contract_reports_unconfigured_transport() -> VcsResult<()> {
         .repo(repo.clone())
         .title("Add provider contract")
         .build();
-    let code_review = code_review().repo(repo).id("1").build();
+    let list_query = code_review().query().list(repo.clone(), None);
+    let code_review = code_review().repo(repo.clone()).id("1").build();
 
     assert_eq!(
         futures::executor::block_on(TransportNotConfiguredCodeReviews.create(draft)),
@@ -36,6 +40,10 @@ fn code_review_contract_reports_unconfigured_transport() -> VcsResult<()> {
         futures::executor::block_on(TransportNotConfiguredCodeReviews.merge(code_review)),
         Err(VcsError::TransportNotConfigured)
     );
+    assert_eq!(
+        futures::executor::block_on(TransportNotConfiguredCodeReviews.list(list_query)),
+        Err(VcsError::TransportNotConfigured)
+    );
 
     Ok(())
 }
@@ -43,10 +51,13 @@ fn code_review_contract_reports_unconfigured_transport() -> VcsResult<()> {
 #[test]
 fn pipeline_contract_reports_unconfigured_transport() -> VcsResult<()> {
     let repo = repo().owner("akira-io").name("vcs-providers-rs").build();
+    let list_query = pipeline().query().list(repo.clone(), None);
     let pipeline = pipeline().repo(repo).id("1").build();
     let result = futures::executor::block_on(TransportNotConfiguredPipelines.cancel(pipeline));
+    let list_result = futures::executor::block_on(TransportNotConfiguredPipelines.list(list_query));
 
     assert_eq!(result, Err(VcsError::TransportNotConfigured));
+    assert_eq!(list_result, Err(VcsError::TransportNotConfigured));
 
     Ok(())
 }
@@ -54,12 +65,15 @@ fn pipeline_contract_reports_unconfigured_transport() -> VcsResult<()> {
 #[test]
 fn release_contract_reports_unconfigured_transport() -> VcsResult<()> {
     let repo = repo().owner("akira-io").name("vcs-providers-rs").build();
-    let release = release().repo(repo.clone()).id("1").build();
+    let release_resource = release().repo(repo.clone()).id("1").build();
+    let list_query = release().query().list(repo.clone(), None);
     let result =
         futures::executor::block_on(TransportNotConfiguredReleases.get(repo, ReleaseId::make("1")));
+    let list_result = futures::executor::block_on(TransportNotConfiguredReleases.list(list_query));
 
-    assert_eq!(release.id().as_str(), "1");
+    assert_eq!(release_resource.id().as_str(), "1");
     assert_eq!(result, Err(VcsError::TransportNotConfigured));
+    assert_eq!(list_result, Err(VcsError::TransportNotConfigured));
 
     Ok(())
 }
