@@ -62,6 +62,10 @@ where
     Driver: ManagedIssueProvider,
 {
     pub fn build(self) -> ManagedIssue<Driver> {
+        self.get()
+    }
+
+    pub fn get(self) -> ManagedIssue<Driver> {
         ManagedIssue {
             manager: self.manager,
             issue: self.issue.build(),
@@ -93,6 +97,14 @@ where
 
     pub fn update(&self, patch: &IssuePatch) -> Request {
         self.manager.driver.issue_update_request(patch)
+    }
+
+    pub fn patch(&self, patch: &IssuePatch) -> Request {
+        self.update(patch)
+    }
+
+    pub fn put(&self, patch: &IssuePatch) -> Request {
+        self.update(patch)
     }
 
     pub fn delete(&self) -> Request {
@@ -173,10 +185,14 @@ where
     }
 
     pub fn build(self) -> ManagedRepoIssues<Driver> {
-        self.get()
+        self.list()
     }
 
     pub fn get(self) -> ManagedRepoIssues<Driver> {
+        self.list()
+    }
+
+    pub fn list(self) -> ManagedRepoIssues<Driver> {
         ManagedRepoIssues {
             manager: self.manager,
             repo: self.repo,
@@ -185,6 +201,6 @@ where
     }
 
     pub fn url(self) -> RequestUrl {
-        self.get().url()
+        self.list().url()
     }
 }

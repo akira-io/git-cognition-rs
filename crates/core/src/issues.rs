@@ -141,6 +141,10 @@ impl<RepoState> IssueBuilder<RepoState, MissingIssueId> {
 
 impl IssueBuilder<ProvidedIssueRepo, ProvidedIssueId> {
     pub fn build(self) -> Issue {
+        self.get()
+    }
+
+    pub fn get(self) -> Issue {
         Issue {
             repo: self.repo.repo,
             id: self.id.id,

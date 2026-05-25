@@ -64,6 +64,10 @@ where
     Driver: ManagedProvider,
 {
     pub fn build(self) -> ManagedRepo<Driver> {
+        self.get()
+    }
+
+    pub fn get(self) -> ManagedRepo<Driver> {
         ManagedRepo {
             manager: self.manager,
             repo: self.repo.build(),
@@ -168,6 +172,14 @@ where
 
     pub fn update(&self, patch: &RepositoryPatch) -> crate::Request {
         self.manager.driver.repo_update_request(patch)
+    }
+
+    pub fn patch(&self, patch: &RepositoryPatch) -> crate::Request {
+        self.update(patch)
+    }
+
+    pub fn put(&self, patch: &RepositoryPatch) -> crate::Request {
+        self.update(patch)
     }
 
     pub fn delete(&self) -> crate::Request {

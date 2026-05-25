@@ -108,6 +108,10 @@ impl<RepoState> CodeReviewBuilder<RepoState, MissingCodeReviewId> {
 
 impl CodeReviewBuilder<ProvidedCodeReviewRepo, ProvidedCodeReviewId> {
     pub fn build(self) -> CodeReview {
+        self.get()
+    }
+
+    pub fn get(self) -> CodeReview {
         CodeReview {
             repo: self.repo.repo,
             id: self.id.id,

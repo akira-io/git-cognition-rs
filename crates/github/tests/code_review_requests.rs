@@ -2,13 +2,15 @@ use vcs_provider_core::{CodeReviewPatchBuilder, RequestMethod, code_review};
 use vcs_provider_github::github;
 
 #[test]
-fn github_code_review_urls_target_repository_endpoints() {
-    let code_review = github()
-        .repo()
-        .owner("akira-io")
-        .name("vcs-providers-rs")
-        .code_review("42")
-        .build();
+fn github_code_review_get_targets_repository_endpoint() {
+    assert_eq!(
+        code_review_resource().url().value(),
+        "https://api.github.com/repos/akira-io/vcs-providers-rs/pulls/42"
+    );
+}
+
+#[test]
+fn github_code_review_list_targets_repository_endpoint() {
     let code_reviews = github()
         .repo()
         .owner("akira-io")
@@ -17,12 +19,8 @@ fn github_code_review_urls_target_repository_endpoints() {
         .pagination()
         .limit(50)
         .cursor("2")
-        .get();
+        .list();
 
-    assert_eq!(
-        code_review.url().value(),
-        "https://api.github.com/repos/akira-io/vcs-providers-rs/pulls/42"
-    );
     assert_eq!(
         code_reviews.url().value(),
         "https://api.github.com/repos/akira-io/vcs-providers-rs/pulls?per_page=50&page=2"
@@ -31,48 +29,68 @@ fn github_code_review_urls_target_repository_endpoints() {
 
 #[test]
 fn github_code_review_builder_accepts_existing_repo() {
-    let repo = github()
-        .repo()
-        .owner("akira-io")
-        .name("vcs-providers-rs")
-        .build();
-    let code_review = github().code_review().repo(repo).id("42").build();
-
     assert_eq!(
-        code_review.url().value(),
+        github()
+            .code_review()
+            .repo(repository())
+            .id("42")
+            .get()
+            .url()
+            .value(),
         "https://api.github.com/repos/akira-io/vcs-providers-rs/pulls/42"
     );
 }
 
 #[test]
-fn github_code_review_requests_build_mutation_requests() {
-    let repo = github()
+fn github_code_review_create_builds_post_request() {
+    let create_request = github().code_review().collection().create(&draft());
+
+    assert_eq!(create_request.method(), &RequestMethod::Post);
+    assert!(create_request.body().is_some());
+}
+
+#[test]
+fn github_code_review_update_builds_patch_request() {
+    assert_eq!(
+        code_review_resource().patch(&patch()).method(),
+        &RequestMethod::Patch
+    );
+}
+
+#[test]
+fn github_code_review_delete_builds_close_request() {
+    assert_eq!(
+        code_review_resource().delete().method(),
+        &RequestMethod::Patch
+    );
+}
+
+fn repository() -> vcs_provider_core::ManagedRepo<vcs_provider_github::GitHubProvider> {
+    github()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
-        .build();
-    let draft = code_review()
+        .get()
+}
+
+fn code_review_resource()
+-> vcs_provider_core::ManagedCodeReview<vcs_provider_github::GitHubProvider> {
+    github().code_review().repo(repository()).id("42").get()
+}
+
+fn draft() -> vcs_provider_core::CodeReviewDraft {
+    code_review()
         .draft()
-        .repo(repo.clone())
+        .repo(repository())
         .title("Add mutable operations")
         .source("feature")
         .target("main")
         .body("Details")
-        .build();
-    let code_review_resource = github().code_review().repo(repo).id("42").build();
-    let patch = CodeReviewPatchBuilder::make(code_review_resource.code_review().clone())
-        .closed()
-        .build();
-    let collection = github().code_review().collection();
+        .get()
+}
 
-    assert_eq!(collection.create(&draft).method(), &RequestMethod::Post);
-    assert!(collection.create(&draft).body().is_some());
-    assert_eq!(
-        code_review_resource.update(&patch).method(),
-        &RequestMethod::Patch
-    );
-    assert_eq!(
-        code_review_resource.delete().method(),
-        &RequestMethod::Patch
-    );
+fn patch() -> vcs_provider_core::CodeReviewPatch {
+    CodeReviewPatchBuilder::make(code_review_resource().code_review().clone())
+        .closed()
+        .get()
 }

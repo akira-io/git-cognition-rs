@@ -39,6 +39,10 @@ impl IssuePatchBuilder {
     }
 
     pub fn build(self) -> IssuePatch {
+        self.get()
+    }
+
+    pub fn get(self) -> IssuePatch {
         IssuePatch {
             issue: self.issue,
             title: self.title,

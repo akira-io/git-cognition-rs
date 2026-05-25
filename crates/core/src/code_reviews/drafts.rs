@@ -76,6 +76,10 @@ impl<RepoState, TitleState> CodeReviewDraftBuilder<RepoState, TitleState> {
 
 impl CodeReviewDraftBuilder<ProvidedCodeReviewDraftRepo, ProvidedCodeReviewTitle> {
     pub fn build(self) -> CodeReviewDraft {
+        self.get()
+    }
+
+    pub fn get(self) -> CodeReviewDraft {
         CodeReviewDraft {
             repo: self.repo.repo,
             title: self.title.title,

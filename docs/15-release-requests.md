@@ -10,7 +10,7 @@ let release = github()
     .owner("akira-io")
     .name("vcs-providers-rs")
     .release("123")
-    .build();
+    .get();
 
 let url = release.url();
 ```
@@ -25,7 +25,7 @@ let releases = gitlab()
     .releases()
     .pagination()
     .limit(50)
-    .get();
+        .list();
 
 let url = releases.url();
 ```
@@ -37,13 +37,13 @@ let repo = github()
     .repo()
     .owner("akira-io")
     .name("vcs-providers-rs")
-    .build();
+    .get();
 
 let release = github()
     .release()
     .repo(repo)
     .id("123")
-    .build();
+    .get();
 ```
 
 Use `vcs(driver)` when the provider is injected:
@@ -56,7 +56,7 @@ let release = provider
     .owner("akira-io")
     .name("vcs-providers-rs")
     .release("v1.0.0")
-    .build();
+    .get();
 ```
 
 ## Provider Support
@@ -79,7 +79,7 @@ Bitbucket Cloud is intentionally not exposed through this facade. Bitbucket Clou
 
 Pagination remains provider-neutral in the caller. Providers map it to their own query names.
 
-## Mutations
+## Create, Patch, Delete
 
 Use `ReleaseDraft` to create releases and `ReleasePatch` to update release notes:
 
@@ -88,7 +88,7 @@ let repo = github()
     .repo()
     .owner("akira-io")
     .name("vcs-providers-rs")
-    .build();
+    .get();
 
 let draft = release()
     .draft()
@@ -96,16 +96,16 @@ let draft = release()
     .tag("v1.0.0")
     .name("v1.0.0")
     .body("Release notes")
-    .build();
+    .get();
 
 let create_request = github().release().collection().create(&draft);
 
-let release = github().release().repo(repo).id("123").build();
+let release = github().release().repo(repo).id("123").get();
 let patch = ReleasePatchBuilder::make(release.release().clone())
     .body("Updated release notes")
-    .build();
+    .get();
 
-let update_request = release.update(&patch);
+let update_request = release.patch(&patch);
 let delete_request = release.delete();
 ```
 

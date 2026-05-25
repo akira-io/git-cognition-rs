@@ -2,13 +2,15 @@ use vcs_provider_bitbucket::bitbucket;
 use vcs_provider_core::{CodeReviewPatchBuilder, RequestMethod, code_review};
 
 #[test]
-fn bitbucket_code_review_urls_target_repository_endpoints() {
-    let code_review = bitbucket()
-        .repo()
-        .owner("akira-io")
-        .name("vcs-providers-rs")
-        .code_review("42")
-        .build();
+fn bitbucket_code_review_get_targets_repository_endpoint() {
+    assert_eq!(
+        code_review_resource().url().value(),
+        "https://api.bitbucket.org/2.0/repositories/akira-io/vcs-providers-rs/pullrequests/42"
+    );
+}
+
+#[test]
+fn bitbucket_code_review_list_targets_repository_endpoint() {
     let code_reviews = bitbucket()
         .repo()
         .owner("akira-io")
@@ -17,12 +19,8 @@ fn bitbucket_code_review_urls_target_repository_endpoints() {
         .pagination()
         .limit(50)
         .cursor("2")
-        .get();
+        .list();
 
-    assert_eq!(
-        code_review.url().value(),
-        "https://api.bitbucket.org/2.0/repositories/akira-io/vcs-providers-rs/pullrequests/42"
-    );
     assert_eq!(
         code_reviews.url().value(),
         "https://api.bitbucket.org/2.0/repositories/akira-io/vcs-providers-rs/pullrequests?pagelen=50&page=2"
@@ -31,45 +29,68 @@ fn bitbucket_code_review_urls_target_repository_endpoints() {
 
 #[test]
 fn bitbucket_code_review_builder_accepts_existing_repo() {
-    let repo = bitbucket()
-        .repo()
-        .owner("akira-io")
-        .name("vcs-providers-rs")
-        .build();
-    let code_review = bitbucket().code_review().repo(repo).id("42").build();
-
     assert_eq!(
-        code_review.url().value(),
+        bitbucket()
+            .code_review()
+            .repo(repository())
+            .id("42")
+            .get()
+            .url()
+            .value(),
         "https://api.bitbucket.org/2.0/repositories/akira-io/vcs-providers-rs/pullrequests/42"
     );
 }
 
 #[test]
-fn bitbucket_code_review_requests_build_mutation_requests() {
-    let repo = bitbucket()
+fn bitbucket_code_review_create_builds_post_request() {
+    let create_request = bitbucket().code_review().collection().create(&draft());
+
+    assert_eq!(create_request.method(), &RequestMethod::Post);
+    assert!(create_request.body().is_some());
+}
+
+#[test]
+fn bitbucket_code_review_update_builds_put_request() {
+    assert_eq!(
+        code_review_resource().put(&patch()).method(),
+        &RequestMethod::Put
+    );
+}
+
+#[test]
+fn bitbucket_code_review_delete_builds_decline_request() {
+    assert_eq!(
+        code_review_resource().delete().method(),
+        &RequestMethod::Post
+    );
+}
+
+fn repository() -> vcs_provider_core::ManagedRepo<vcs_provider_bitbucket::BitbucketProvider> {
+    bitbucket()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
-        .build();
-    let draft = code_review()
+        .get()
+}
+
+fn code_review_resource()
+-> vcs_provider_core::ManagedCodeReview<vcs_provider_bitbucket::BitbucketProvider> {
+    bitbucket().code_review().repo(repository()).id("42").get()
+}
+
+fn draft() -> vcs_provider_core::CodeReviewDraft {
+    code_review()
         .draft()
-        .repo(repo.clone())
+        .repo(repository())
         .title("Add mutable operations")
         .source("feature")
         .target("main")
         .body("Details")
-        .build();
-    let code_review_resource = bitbucket().code_review().repo(repo).id("42").build();
-    let patch = CodeReviewPatchBuilder::make(code_review_resource.code_review().clone())
-        .closed()
-        .build();
-    let collection = bitbucket().code_review().collection();
+        .get()
+}
 
-    assert_eq!(collection.create(&draft).method(), &RequestMethod::Post);
-    assert!(collection.create(&draft).body().is_some());
-    assert_eq!(
-        code_review_resource.update(&patch).method(),
-        &RequestMethod::Put
-    );
-    assert_eq!(code_review_resource.delete().method(), &RequestMethod::Post);
+fn patch() -> vcs_provider_core::CodeReviewPatch {
+    CodeReviewPatchBuilder::make(code_review_resource().code_review().clone())
+        .closed()
+        .get()
 }

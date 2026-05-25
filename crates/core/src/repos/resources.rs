@@ -104,6 +104,10 @@ impl RepositoryDraftBuilder {
     }
 
     pub fn build(self) -> RepositoryDraft {
+        self.get()
+    }
+
+    pub fn get(self) -> RepositoryDraft {
         RepositoryDraft {
             repo: self.repo,
             visibility: self.visibility,
@@ -160,6 +164,10 @@ impl RepositoryPatchBuilder {
     }
 
     pub fn build(self) -> RepositoryPatch {
+        self.get()
+    }
+
+    pub fn get(self) -> RepositoryPatch {
         RepositoryPatch {
             repo: self.repo,
             visibility: self.visibility,
@@ -198,6 +206,10 @@ impl<VisibilityState> RepositoryBuilder<VisibilityState, MissingLifecycleState> 
 
 impl RepositoryBuilder<ProvidedVisibility, ProvidedLifecycleState> {
     pub fn build(self) -> Repository {
+        self.get()
+    }
+
+    pub fn get(self) -> Repository {
         Repository {
             provider: self.provider.0,
             repo: self.repo,

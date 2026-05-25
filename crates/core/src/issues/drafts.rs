@@ -49,6 +49,10 @@ impl<RepoState, TitleState> IssueDraftBuilder<RepoState, TitleState> {
 
 impl IssueDraftBuilder<ProvidedIssueRepo, ProvidedIssueTitle> {
     pub fn build(self) -> IssueDraft {
+        self.get()
+    }
+
+    pub fn get(self) -> IssueDraft {
         IssueDraft {
             repo: self.repo.repo,
             title: self.title.title,

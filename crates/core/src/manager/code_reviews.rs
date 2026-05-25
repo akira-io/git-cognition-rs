@@ -63,6 +63,10 @@ where
     Driver: ManagedCodeReviewProvider,
 {
     pub fn build(self) -> ManagedCodeReview<Driver> {
+        self.get()
+    }
+
+    pub fn get(self) -> ManagedCodeReview<Driver> {
         ManagedCodeReview {
             manager: self.manager,
             code_review: self.code_review.build(),
@@ -94,6 +98,14 @@ where
 
     pub fn update(&self, patch: &CodeReviewPatch) -> Request {
         self.manager.driver.code_review_update_request(patch)
+    }
+
+    pub fn patch(&self, patch: &CodeReviewPatch) -> Request {
+        self.update(patch)
+    }
+
+    pub fn put(&self, patch: &CodeReviewPatch) -> Request {
+        self.update(patch)
     }
 
     pub fn delete(&self) -> Request {
@@ -176,10 +188,14 @@ where
     }
 
     pub fn build(self) -> ManagedRepoCodeReviews<Driver> {
-        self.get()
+        self.list()
     }
 
     pub fn get(self) -> ManagedRepoCodeReviews<Driver> {
+        self.list()
+    }
+
+    pub fn list(self) -> ManagedRepoCodeReviews<Driver> {
         ManagedRepoCodeReviews {
             manager: self.manager,
             repo: self.repo,
@@ -188,6 +204,6 @@ where
     }
 
     pub fn url(self) -> RequestUrl {
-        self.get().url()
+        self.list().url()
     }
 }

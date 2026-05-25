@@ -39,6 +39,10 @@ impl CodeReviewPatchBuilder {
     }
 
     pub fn build(self) -> CodeReviewPatch {
+        self.get()
+    }
+
+    pub fn get(self) -> CodeReviewPatch {
         CodeReviewPatch {
             code_review: self.code_review,
             title: self.title,

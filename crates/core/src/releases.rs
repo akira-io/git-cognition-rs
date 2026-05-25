@@ -2,6 +2,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::{BoxFuture, Page, PageRequest, Repo, VcsResult, transport_not_configured};
 
+#[path = "releases/drafts.rs"]
+mod drafts;
+#[path = "releases/patches.rs"]
+mod patches;
+
+pub use drafts::{MissingReleaseTag, ProvidedReleaseTag, ReleaseDraftBuilder};
+pub use patches::ReleasePatchBuilder;
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ReleaseId(String);
 
@@ -47,22 +55,6 @@ impl ReleaseDraft {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ReleaseDraftBuilder<RepoState, TagState> {
-    repo: RepoState,
-    tag: TagState,
-    name: Option<String>,
-    body: Option<String>,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MissingReleaseTag;
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ProvidedReleaseTag {
-    tag: String,
-}
-
 impl Release {
     pub fn builder() -> ReleaseBuilder<MissingReleaseRepo, MissingReleaseId> {
         ReleaseBuilder {
@@ -102,41 +94,6 @@ impl ReleasePatch {
 
     pub fn body(&self) -> Option<&str> {
         self.body.as_deref()
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ReleasePatchBuilder {
-    release: Release,
-    name: Option<String>,
-    body: Option<String>,
-}
-
-impl ReleasePatchBuilder {
-    pub fn make(release: Release) -> Self {
-        Self {
-            release,
-            name: None,
-            body: None,
-        }
-    }
-
-    pub fn name(mut self, name: impl Into<String>) -> Self {
-        self.name = Some(name.into());
-        self
-    }
-
-    pub fn body(mut self, body: impl Into<String>) -> Self {
-        self.body = Some(body.into());
-        self
-    }
-
-    pub fn build(self) -> ReleasePatch {
-        ReleasePatch {
-            release: self.release,
-            name: self.name,
-            body: self.body,
-        }
     }
 }
 
@@ -187,6 +144,10 @@ impl<RepoState> ReleaseBuilder<RepoState, MissingReleaseId> {
 
 impl ReleaseBuilder<ProvidedReleaseRepo, ProvidedReleaseId> {
     pub fn build(self) -> Release {
+        self.get()
+    }
+
+    pub fn get(self) -> Release {
         Release {
             repo: self.repo.repo,
             id: self.id.id,
@@ -205,51 +166,6 @@ impl ReleaseBuilder<MissingReleaseRepo, MissingReleaseId> {
             tag: MissingReleaseTag,
             name: None,
             body: None,
-        }
-    }
-}
-
-impl<TagState> ReleaseDraftBuilder<MissingReleaseRepo, TagState> {
-    pub fn repo(self, repo: impl Into<Repo>) -> ReleaseDraftBuilder<ProvidedReleaseRepo, TagState> {
-        ReleaseDraftBuilder {
-            repo: ProvidedReleaseRepo { repo: repo.into() },
-            tag: self.tag,
-            name: self.name,
-            body: self.body,
-        }
-    }
-}
-
-impl<RepoState> ReleaseDraftBuilder<RepoState, MissingReleaseTag> {
-    pub fn tag(self, tag: impl Into<String>) -> ReleaseDraftBuilder<RepoState, ProvidedReleaseTag> {
-        ReleaseDraftBuilder {
-            repo: self.repo,
-            tag: ProvidedReleaseTag { tag: tag.into() },
-            name: self.name,
-            body: self.body,
-        }
-    }
-}
-
-impl<RepoState, TagState> ReleaseDraftBuilder<RepoState, TagState> {
-    pub fn name(mut self, name: impl Into<String>) -> Self {
-        self.name = Some(name.into());
-        self
-    }
-
-    pub fn body(mut self, body: impl Into<String>) -> Self {
-        self.body = Some(body.into());
-        self
-    }
-}
-
-impl ReleaseDraftBuilder<ProvidedReleaseRepo, ProvidedReleaseTag> {
-    pub fn build(self) -> ReleaseDraft {
-        ReleaseDraft {
-            repo: self.repo.repo,
-            tag: self.tag.tag,
-            name: self.name,
-            body: self.body,
         }
     }
 }

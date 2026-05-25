@@ -10,7 +10,7 @@ let issue = github()
     .owner("akira-io")
     .name("vcs-providers-rs")
     .issue("42")
-    .build();
+    .get();
 
 let url = issue.url();
 ```
@@ -25,7 +25,7 @@ let issues = gitlab()
     .issues()
     .pagination()
     .limit(50)
-    .get();
+        .list();
 
 let url = issues.url();
 ```
@@ -41,7 +41,7 @@ let issues = github()
     .pagination()
     .limit(50)
     .cursor("2")
-    .get();
+        .list();
 
 let url = issues.url();
 ```
@@ -53,13 +53,13 @@ let repo = github()
     .repo()
     .owner("akira-io")
     .name("vcs-providers-rs")
-    .build();
+    .get();
 
 let issue = github()
     .issue()
     .repo(repo)
     .id("42")
-    .build();
+    .get();
 ```
 
 Use `vcs(driver)` when the provider is injected:
@@ -72,7 +72,7 @@ let issue = provider
     .owner("akira-io")
     .name("vcs-providers-rs")
     .issue("42")
-    .build();
+    .get();
 ```
 
 ## Provider Support
@@ -100,7 +100,7 @@ advertise `Capability::Issues` and does not implement `ManagedIssueProvider`. Ji
 tracking should be modeled as a separate extension instead of leaking Jira behavior into the
 provider-neutral issue contract.
 
-## Mutations
+## Create, Patch, Delete
 
 Use `IssueDraft` to create issues and `IssuePatch` to update or close them:
 
@@ -109,23 +109,24 @@ let repo = github()
     .repo()
     .owner("akira-io")
     .name("vcs-providers-rs")
-    .build();
+    .get();
 
 let draft = issue()
     .draft()
     .repo(repo.clone())
     .title("Fix pagination")
     .body("The cursor should be opaque.")
-    .build();
+    .get();
 
 let create_request = github().issue().collection().create(&draft);
 
-let issue = github().issue().repo(repo).id("42").build();
+let issue = github().issue().repo(repo).id("42").get();
 let patch = IssuePatchBuilder::make(issue.issue().clone())
     .closed()
-    .build();
+    .get();
 
-let update_request = issue.update(&patch);
+let update_request = issue.patch(&patch);
+let delete_request = issue.delete();
 ```
 
 Provider support:

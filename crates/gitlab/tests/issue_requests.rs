@@ -2,13 +2,22 @@ use vcs_provider_core::{IssuePatchBuilder, RequestMethod, issue};
 use vcs_provider_gitlab::gitlab;
 
 #[test]
-fn gitlab_issue_urls_target_repository_endpoints() {
+fn gitlab_issue_get_targets_repository_endpoint() {
     let issue_resource = gitlab()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
         .issue("42")
-        .build();
+        .get();
+
+    assert_eq!(
+        issue_resource.url().value(),
+        "https://gitlab.com/api/v4/projects/akira-io%2Fvcs-providers-rs/issues/42"
+    );
+}
+
+#[test]
+fn gitlab_issue_list_targets_repository_endpoint() {
     let issues = gitlab()
         .repo()
         .owner("akira-io")
@@ -17,12 +26,8 @@ fn gitlab_issue_urls_target_repository_endpoints() {
         .pagination()
         .limit(50)
         .cursor("2")
-        .get();
+        .list();
 
-    assert_eq!(
-        issue_resource.url().value(),
-        "https://gitlab.com/api/v4/projects/akira-io%2Fvcs-providers-rs/issues/42"
-    );
     assert_eq!(
         issues.url().value(),
         "https://gitlab.com/api/v4/projects/akira-io%2Fvcs-providers-rs/issues?per_page=50&page=2"
@@ -35,8 +40,8 @@ fn gitlab_issue_builder_accepts_existing_repo() {
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
-        .build();
-    let issue_resource = gitlab().issue().repo(repo).id("42").build();
+        .get();
+    let issue_resource = gitlab().issue().repo(repo).id("42").get();
 
     assert_eq!(
         issue_resource.url().value(),
@@ -45,26 +50,47 @@ fn gitlab_issue_builder_accepts_existing_repo() {
 }
 
 #[test]
-fn gitlab_issue_requests_build_mutation_requests() {
+fn gitlab_issue_create_builds_post_request() {
     let repo = gitlab()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
-        .build();
+        .get();
     let draft = issue()
         .draft()
         .repo(repo.clone())
         .title("Track mutable issue requests")
         .body("Details")
-        .build();
-    let issue_resource = gitlab().issue().repo(repo).id("42").build();
-    let patch = IssuePatchBuilder::make(issue_resource.issue().clone())
-        .closed()
-        .build();
+        .get();
     let collection = gitlab().issue().collection();
 
     assert_eq!(collection.create(&draft).method(), &RequestMethod::Post);
     assert!(collection.create(&draft).body().is_some());
-    assert_eq!(issue_resource.update(&patch).method(), &RequestMethod::Put);
+}
+
+#[test]
+fn gitlab_issue_put_builds_put_request() {
+    let repo = gitlab()
+        .repo()
+        .owner("akira-io")
+        .name("vcs-providers-rs")
+        .get();
+    let issue_resource = gitlab().issue().repo(repo).id("42").get();
+    let patch = IssuePatchBuilder::make(issue_resource.issue().clone())
+        .closed()
+        .get();
+
+    assert_eq!(issue_resource.put(&patch).method(), &RequestMethod::Put);
+}
+
+#[test]
+fn gitlab_issue_delete_builds_delete_request() {
+    let repo = gitlab()
+        .repo()
+        .owner("akira-io")
+        .name("vcs-providers-rs")
+        .get();
+    let issue_resource = gitlab().issue().repo(repo).id("42").get();
+
     assert_eq!(issue_resource.delete().method(), &RequestMethod::Delete);
 }

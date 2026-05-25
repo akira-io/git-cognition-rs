@@ -62,6 +62,10 @@ where
     Driver: ManagedReleaseProvider,
 {
     pub fn build(self) -> ManagedRelease<Driver> {
+        self.get()
+    }
+
+    pub fn get(self) -> ManagedRelease<Driver> {
         ManagedRelease {
             manager: self.manager,
             release: self.release.build(),
@@ -93,6 +97,14 @@ where
 
     pub fn update(&self, patch: &ReleasePatch) -> Request {
         self.manager.driver.release_update_request(patch)
+    }
+
+    pub fn patch(&self, patch: &ReleasePatch) -> Request {
+        self.update(patch)
+    }
+
+    pub fn put(&self, patch: &ReleasePatch) -> Request {
+        self.update(patch)
     }
 
     pub fn delete(&self) -> Request {
@@ -173,10 +185,14 @@ where
     }
 
     pub fn build(self) -> ManagedRepoReleases<Driver> {
-        self.get()
+        self.list()
     }
 
     pub fn get(self) -> ManagedRepoReleases<Driver> {
+        self.list()
+    }
+
+    pub fn list(self) -> ManagedRepoReleases<Driver> {
         ManagedRepoReleases {
             manager: self.manager,
             repo: self.repo,
@@ -185,6 +201,6 @@ where
     }
 
     pub fn url(self) -> RequestUrl {
-        self.get().url()
+        self.list().url()
     }
 }
