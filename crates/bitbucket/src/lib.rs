@@ -122,11 +122,11 @@ impl ManagedCodeReviewProvider for BitbucketProvider {
         BitbucketCodeReview::make(DEFAULT_BASE_URL, patch.code_review().clone()).update(patch)
     }
 
-    fn code_review_delete_request(
+    fn code_review_close_request(
         &self,
         code_review: &vcs_provider_core::CodeReview,
     ) -> vcs_provider_core::Request {
-        BitbucketCodeReview::make(DEFAULT_BASE_URL, code_review.clone()).delete()
+        BitbucketCodeReview::make(DEFAULT_BASE_URL, code_review.clone()).close()
     }
 }
 

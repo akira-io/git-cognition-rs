@@ -48,12 +48,14 @@ pub use issues::{
 };
 pub use manager::{
     ManagedCodeReview, ManagedCodeReviewBuilder, ManagedCodeReviewCollection,
-    ManagedCodeReviewProvider, ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection,
-    ManagedIssueProvider, ManagedProvider, ManagedRelease, ManagedReleaseBuilder,
-    ManagedReleaseCollection, ManagedReleaseProvider, ManagedRepo, ManagedRepoBuilder,
-    ManagedRepoCodeReviews, ManagedRepoCodeReviewsPagination, ManagedRepoCollection,
-    ManagedRepoIssues, ManagedRepoIssuesPagination, ManagedRepoReleases,
-    ManagedRepoReleasesPagination, VcsManager, VcsManagerBuilder, VcsManagerWithDriverBuilder,
+    ManagedCodeReviewDeleteProvider, ManagedCodeReviewDraftBuilder, ManagedCodeReviewProvider,
+    ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection, ManagedIssueDeleteProvider,
+    ManagedIssueDraftBuilder, ManagedIssueProvider, ManagedProvider, ManagedRelease,
+    ManagedReleaseBuilder, ManagedReleaseCollection, ManagedReleaseDraftBuilder,
+    ManagedReleaseProvider, ManagedRepo, ManagedRepoBuilder, ManagedRepoCodeReviews,
+    ManagedRepoCodeReviewsPagination, ManagedRepoCollection, ManagedRepoIssues,
+    ManagedRepoIssuesPagination, ManagedRepoReleases, ManagedRepoReleasesPagination,
+    ManagedRepositoryDraftBuilder, VcsManager, VcsManagerBuilder, VcsManagerWithDriverBuilder,
 };
 pub use middleware::{
     HeaderMiddleware, Middleware, MissingTransport, ProvidedTransport, TransportPipeline,

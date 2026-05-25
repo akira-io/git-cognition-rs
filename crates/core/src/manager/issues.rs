@@ -1,10 +1,10 @@
 use crate::{
-    Issue, IssueBuilder, IssueDraft, IssueListQuery, IssuePatch, IssueQueryBuilder, MissingIssueId,
-    MissingIssueRepo, PageRequest, PageRequestBuilder, ProvidedIssueId, ProvidedIssueRepo, Repo,
-    Request, RequestUrl,
+    Issue, IssueBuilder, IssueDraftBuilder, IssueListQuery, IssuePatch, IssueQueryBuilder,
+    MissingIssueId, MissingIssueRepo, MissingIssueTitle, PageRequest, PageRequestBuilder,
+    ProvidedIssueId, ProvidedIssueRepo, ProvidedIssueTitle, Repo, Request, RequestUrl,
 };
 
-use super::{ManagedIssueProvider, VcsManager};
+use super::{ManagedIssueDeleteProvider, ManagedIssueProvider, VcsManager};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedIssueBuilder<Driver, RepoState, IssueIdState> {
@@ -24,6 +24,13 @@ where
 
     pub fn query(&self) -> IssueQueryBuilder {
         IssueQueryBuilder
+    }
+
+    pub fn draft(&self) -> ManagedIssueDraftBuilder<Driver, MissingIssueRepo, MissingIssueTitle> {
+        ManagedIssueDraftBuilder {
+            manager: self.manager.clone(),
+            draft: crate::issue().draft(),
+        }
     }
 }
 
@@ -74,6 +81,61 @@ where
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedIssueDraftBuilder<Driver, RepoState, TitleState> {
+    manager: VcsManager<Driver>,
+    draft: IssueDraftBuilder<RepoState, TitleState>,
+}
+
+impl<Driver, TitleState> ManagedIssueDraftBuilder<Driver, MissingIssueRepo, TitleState>
+where
+    Driver: ManagedIssueProvider,
+{
+    pub fn repo(
+        self,
+        repo: impl Into<Repo>,
+    ) -> ManagedIssueDraftBuilder<Driver, ProvidedIssueRepo, TitleState> {
+        ManagedIssueDraftBuilder {
+            manager: self.manager,
+            draft: self.draft.repo(repo),
+        }
+    }
+}
+
+impl<Driver, RepoState> ManagedIssueDraftBuilder<Driver, RepoState, MissingIssueTitle>
+where
+    Driver: ManagedIssueProvider,
+{
+    pub fn title(
+        self,
+        title: impl Into<String>,
+    ) -> ManagedIssueDraftBuilder<Driver, RepoState, ProvidedIssueTitle> {
+        ManagedIssueDraftBuilder {
+            manager: self.manager,
+            draft: self.draft.title(title),
+        }
+    }
+}
+
+impl<Driver, RepoState, TitleState> ManagedIssueDraftBuilder<Driver, RepoState, TitleState>
+where
+    Driver: ManagedIssueProvider,
+{
+    pub fn body(mut self, body: impl Into<String>) -> Self {
+        self.draft = self.draft.body(body);
+        self
+    }
+}
+
+impl<Driver> ManagedIssueDraftBuilder<Driver, ProvidedIssueRepo, ProvidedIssueTitle>
+where
+    Driver: ManagedIssueProvider,
+{
+    pub fn create(self) -> Request {
+        self.manager.driver.issue_create_request(&self.draft.get())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedIssue<Driver> {
     manager: VcsManager<Driver>,
     issue: Issue,
@@ -99,14 +161,15 @@ where
         self.manager.driver.issue_update_request(patch)
     }
 
-    pub fn patch(&self, patch: &IssuePatch) -> Request {
-        self.update(patch)
+    pub fn close(&self, patch: &IssuePatch) -> Request {
+        self.manager.driver.issue_close_request(patch)
     }
+}
 
-    pub fn put(&self, patch: &IssuePatch) -> Request {
-        self.update(patch)
-    }
-
+impl<Driver> ManagedIssue<Driver>
+where
+    Driver: ManagedIssueDeleteProvider,
+{
     pub fn delete(&self) -> Request {
         self.manager.driver.issue_delete_request(&self.issue)
     }
@@ -123,10 +186,6 @@ where
 {
     pub fn list(&self, query: &IssueListQuery) -> RequestUrl {
         self.manager.driver.issue_list_url(query)
-    }
-
-    pub fn create(&self, draft: &IssueDraft) -> Request {
-        self.manager.driver.issue_create_request(draft)
     }
 }
 

@@ -1,4 +1,4 @@
-use vcs_provider_core::{ReleasePatchBuilder, RequestMethod, release};
+use vcs_provider_core::{ReleasePatchBuilder, RequestMethod};
 use vcs_provider_github::github;
 
 #[test]
@@ -56,33 +56,33 @@ fn github_release_create_builds_post_request() {
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
-    let draft = release()
+    let create_request = github()
+        .release()
         .draft()
         .repo(repo.clone())
         .tag("v1.0.0")
         .name("v1.0.0")
         .body("Release notes")
-        .get();
-    let collection = github().release().collection();
+        .create();
 
-    assert_eq!(collection.create(&draft).method(), &RequestMethod::Post);
-    assert!(collection.create(&draft).body().is_some());
+    assert_eq!(create_request.method(), &RequestMethod::Post);
+    assert!(create_request.body().is_some());
 }
 
 #[test]
-fn github_release_patch_builds_patch_request() {
+fn github_release_update_builds_patch_request() {
     let repo = github()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
     let release_resource = github().release().repo(repo).id("123").get();
-    let patch = ReleasePatchBuilder::make(release_resource.release().clone())
+    let release_patch = ReleasePatchBuilder::make(release_resource.release().clone())
         .body("Updated")
         .get();
 
     assert_eq!(
-        release_resource.patch(&patch).method(),
+        release_resource.update(&release_patch).method(),
         &RequestMethod::Patch
     );
 }

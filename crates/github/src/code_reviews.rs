@@ -38,7 +38,7 @@ impl GitHubCodeReview {
             .build()
     }
 
-    pub fn delete(&self) -> Request {
+    pub fn close(&self) -> Request {
         request()
             .patch(self.url().value())
             .body(RequestBody::make("{\"state\":\"closed\"}"))

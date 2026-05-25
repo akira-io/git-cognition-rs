@@ -1,7 +1,8 @@
 use crate::{
-    MissingReleaseId, MissingReleaseRepo, PageRequest, PageRequestBuilder, ProvidedReleaseId,
-    ProvidedReleaseRepo, Release, ReleaseBuilder, ReleaseDraft, ReleaseListQuery, ReleasePatch,
-    ReleaseQueryBuilder, Repo, Request, RequestUrl,
+    MissingReleaseId, MissingReleaseRepo, MissingReleaseTag, PageRequest, PageRequestBuilder,
+    ProvidedReleaseId, ProvidedReleaseRepo, ProvidedReleaseTag, Release, ReleaseBuilder,
+    ReleaseDraftBuilder, ReleaseListQuery, ReleasePatch, ReleaseQueryBuilder, Repo, Request,
+    RequestUrl,
 };
 
 use super::{ManagedReleaseProvider, VcsManager};
@@ -24,6 +25,15 @@ where
 
     pub fn query(&self) -> ReleaseQueryBuilder {
         ReleaseQueryBuilder
+    }
+
+    pub fn draft(
+        &self,
+    ) -> ManagedReleaseDraftBuilder<Driver, MissingReleaseRepo, MissingReleaseTag> {
+        ManagedReleaseDraftBuilder {
+            manager: self.manager.clone(),
+            draft: crate::release().draft(),
+        }
     }
 }
 
@@ -74,6 +84,68 @@ where
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedReleaseDraftBuilder<Driver, RepoState, TagState> {
+    manager: VcsManager<Driver>,
+    draft: ReleaseDraftBuilder<RepoState, TagState>,
+}
+
+impl<Driver, TagState> ManagedReleaseDraftBuilder<Driver, MissingReleaseRepo, TagState>
+where
+    Driver: ManagedReleaseProvider,
+{
+    pub fn repo(
+        self,
+        repo: impl Into<Repo>,
+    ) -> ManagedReleaseDraftBuilder<Driver, ProvidedReleaseRepo, TagState> {
+        ManagedReleaseDraftBuilder {
+            manager: self.manager,
+            draft: self.draft.repo(repo),
+        }
+    }
+}
+
+impl<Driver, RepoState> ManagedReleaseDraftBuilder<Driver, RepoState, MissingReleaseTag>
+where
+    Driver: ManagedReleaseProvider,
+{
+    pub fn tag(
+        self,
+        tag: impl Into<String>,
+    ) -> ManagedReleaseDraftBuilder<Driver, RepoState, ProvidedReleaseTag> {
+        ManagedReleaseDraftBuilder {
+            manager: self.manager,
+            draft: self.draft.tag(tag),
+        }
+    }
+}
+
+impl<Driver, RepoState, TagState> ManagedReleaseDraftBuilder<Driver, RepoState, TagState>
+where
+    Driver: ManagedReleaseProvider,
+{
+    pub fn name(mut self, name: impl Into<String>) -> Self {
+        self.draft = self.draft.name(name);
+        self
+    }
+
+    pub fn body(mut self, body: impl Into<String>) -> Self {
+        self.draft = self.draft.body(body);
+        self
+    }
+}
+
+impl<Driver> ManagedReleaseDraftBuilder<Driver, ProvidedReleaseRepo, ProvidedReleaseTag>
+where
+    Driver: ManagedReleaseProvider,
+{
+    pub fn create(self) -> Request {
+        self.manager
+            .driver
+            .release_create_request(&self.draft.get())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedRelease<Driver> {
     manager: VcsManager<Driver>,
     release: Release,
@@ -99,14 +171,6 @@ where
         self.manager.driver.release_update_request(patch)
     }
 
-    pub fn patch(&self, patch: &ReleasePatch) -> Request {
-        self.update(patch)
-    }
-
-    pub fn put(&self, patch: &ReleasePatch) -> Request {
-        self.update(patch)
-    }
-
     pub fn delete(&self) -> Request {
         self.manager.driver.release_delete_request(&self.release)
     }
@@ -123,10 +187,6 @@ where
 {
     pub fn list(&self, query: &ReleaseListQuery) -> RequestUrl {
         self.manager.driver.release_list_url(query)
-    }
-
-    pub fn create(&self, draft: &ReleaseDraft) -> Request {
-        self.manager.driver.release_create_request(draft)
     }
 }
 

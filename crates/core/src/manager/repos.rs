@@ -4,8 +4,8 @@ use crate::{
     ManagedRepoIssues, ManagedRepoReleases, MissingOwnerName, MissingRepositoryName, PageRequest,
     ProvidedCodeReviewId, ProvidedCodeReviewRepo, ProvidedIssueId, ProvidedIssueRepo,
     ProvidedOwnerName, ProvidedReleaseId, ProvidedReleaseRepo, ProvidedRepositoryName, Repo,
-    RepoBuilder, RepositoryDraft, RepositoryListQuery, RepositoryPatch, RepositorySearchQuery,
-    RequestUrl, VcsManager, code_review, issue, release,
+    RepoBuilder, RepositoryDraftBuilder, RepositoryListQuery, RepositoryPatch,
+    RepositorySearchQuery, RequestUrl, VcsManager, Visibility, code_review, issue, release,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -26,6 +26,13 @@ where
 
     pub fn query(&self) -> crate::RepoQueryBuilder {
         crate::RepoQueryBuilder
+    }
+
+    pub fn draft(&self, repo: impl Into<Repo>) -> ManagedRepositoryDraftBuilder<Driver> {
+        ManagedRepositoryDraftBuilder {
+            manager: self.manager.clone(),
+            draft: RepositoryDraftBuilder::make(repo.into()),
+        }
     }
 }
 
@@ -145,6 +152,31 @@ where
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedRepositoryDraftBuilder<Driver> {
+    manager: VcsManager<Driver>,
+    draft: RepositoryDraftBuilder,
+}
+
+impl<Driver> ManagedRepositoryDraftBuilder<Driver>
+where
+    Driver: ManagedProvider,
+{
+    pub fn visibility(mut self, visibility: Visibility) -> Self {
+        self.draft = self.draft.visibility(visibility);
+        self
+    }
+
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.draft = self.draft.description(description);
+        self
+    }
+
+    pub fn create(self) -> crate::Request {
+        self.manager.driver.repo_create_request(&self.draft.get())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedRepo<Driver> {
     manager: VcsManager<Driver>,
     repo: Repo,
@@ -166,20 +198,8 @@ where
         self.manager.driver.repo_commits_url(&self.repo, page)
     }
 
-    pub fn create(&self, draft: &RepositoryDraft) -> crate::Request {
-        self.manager.driver.repo_create_request(draft)
-    }
-
     pub fn update(&self, patch: &RepositoryPatch) -> crate::Request {
         self.manager.driver.repo_update_request(patch)
-    }
-
-    pub fn patch(&self, patch: &RepositoryPatch) -> crate::Request {
-        self.update(patch)
-    }
-
-    pub fn put(&self, patch: &RepositoryPatch) -> crate::Request {
-        self.update(patch)
     }
 
     pub fn delete(&self) -> crate::Request {
@@ -202,10 +222,6 @@ where
 
     pub fn search(&self, query: &RepositorySearchQuery) -> RequestUrl {
         self.manager.driver.repo_search_url(query)
-    }
-
-    pub fn create(&self, draft: &RepositoryDraft) -> crate::Request {
-        self.manager.driver.repo_create_request(draft)
     }
 }
 

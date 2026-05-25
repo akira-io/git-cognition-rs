@@ -138,14 +138,6 @@ impl ManagedIssueProvider for GitHubProvider {
     ) -> vcs_provider_core::Request {
         GitHubIssue::make(DEFAULT_BASE_URL, patch.issue().clone()).update(patch)
     }
-
-    fn issue_delete_request(&self, issue: &vcs_provider_core::Issue) -> vcs_provider_core::Request {
-        let patch = vcs_provider_core::IssuePatchBuilder::make(issue.clone())
-            .closed()
-            .build();
-
-        GitHubIssue::make(DEFAULT_BASE_URL, issue.clone()).update(&patch)
-    }
 }
 
 impl ManagedCodeReviewProvider for GitHubProvider {
@@ -177,11 +169,11 @@ impl ManagedCodeReviewProvider for GitHubProvider {
         GitHubCodeReview::make(DEFAULT_BASE_URL, patch.code_review().clone()).update(patch)
     }
 
-    fn code_review_delete_request(
+    fn code_review_close_request(
         &self,
         code_review: &vcs_provider_core::CodeReview,
     ) -> vcs_provider_core::Request {
-        GitHubCodeReview::make(DEFAULT_BASE_URL, code_review.clone()).delete()
+        GitHubCodeReview::make(DEFAULT_BASE_URL, code_review.clone()).close()
     }
 }
 

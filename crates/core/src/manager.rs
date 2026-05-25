@@ -15,17 +15,19 @@ mod repos;
 
 pub use code_reviews::{
     ManagedCodeReview, ManagedCodeReviewBuilder, ManagedCodeReviewCollection,
-    ManagedRepoCodeReviews, ManagedRepoCodeReviewsPagination,
+    ManagedCodeReviewDraftBuilder, ManagedRepoCodeReviews, ManagedRepoCodeReviewsPagination,
 };
 pub use issues::{
-    ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection, ManagedRepoIssues,
-    ManagedRepoIssuesPagination,
+    ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection, ManagedIssueDraftBuilder,
+    ManagedRepoIssues, ManagedRepoIssuesPagination,
 };
 pub use releases::{
-    ManagedRelease, ManagedReleaseBuilder, ManagedReleaseCollection, ManagedRepoReleases,
-    ManagedRepoReleasesPagination,
+    ManagedRelease, ManagedReleaseBuilder, ManagedReleaseCollection, ManagedReleaseDraftBuilder,
+    ManagedRepoReleases, ManagedRepoReleasesPagination,
 };
-pub use repos::{ManagedRepo, ManagedRepoBuilder, ManagedRepoCollection};
+pub use repos::{
+    ManagedRepo, ManagedRepoBuilder, ManagedRepoCollection, ManagedRepositoryDraftBuilder,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VcsManager<Driver> {
@@ -111,6 +113,12 @@ pub trait ManagedIssueProvider: ManagedProvider {
 
     fn issue_update_request(&self, patch: &IssuePatch) -> crate::Request;
 
+    fn issue_close_request(&self, patch: &IssuePatch) -> crate::Request {
+        self.issue_update_request(patch)
+    }
+}
+
+pub trait ManagedIssueDeleteProvider: ManagedIssueProvider {
     fn issue_delete_request(&self, issue: &Issue) -> crate::Request;
 }
 
@@ -123,6 +131,10 @@ pub trait ManagedCodeReviewProvider: ManagedProvider {
 
     fn code_review_update_request(&self, patch: &CodeReviewPatch) -> crate::Request;
 
+    fn code_review_close_request(&self, code_review: &CodeReview) -> crate::Request;
+}
+
+pub trait ManagedCodeReviewDeleteProvider: ManagedCodeReviewProvider {
     fn code_review_delete_request(&self, code_review: &CodeReview) -> crate::Request;
 }
 

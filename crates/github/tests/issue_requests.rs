@@ -1,4 +1,4 @@
-use vcs_provider_core::{IssuePatchBuilder, RequestMethod, issue};
+use vcs_provider_core::{IssuePatchBuilder, RequestMethod};
 use vcs_provider_github::github;
 
 #[test]
@@ -56,35 +56,38 @@ fn github_issue_create_builds_post_request() {
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
-    let draft = issue()
+    let create_request = github()
+        .issue()
         .draft()
         .repo(repo.clone())
         .title("Track mutable issue requests")
         .body("Details")
-        .get();
-    let collection = github().issue().collection();
+        .create();
 
-    assert_eq!(collection.create(&draft).method(), &RequestMethod::Post);
-    assert!(collection.create(&draft).body().is_some());
+    assert_eq!(create_request.method(), &RequestMethod::Post);
+    assert!(create_request.body().is_some());
 }
 
 #[test]
-fn github_issue_patch_builds_patch_request() {
+fn github_issue_update_builds_patch_request() {
     let repo = github()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
     let issue_resource = github().issue().repo(repo).id("42").get();
-    let patch = IssuePatchBuilder::make(issue_resource.issue().clone())
+    let issue_patch = IssuePatchBuilder::make(issue_resource.issue().clone())
         .closed()
         .get();
 
-    assert_eq!(issue_resource.patch(&patch).method(), &RequestMethod::Patch);
+    assert_eq!(
+        issue_resource.update(&issue_patch).method(),
+        &RequestMethod::Patch
+    );
 }
 
 #[test]
-fn github_issue_delete_builds_close_request() {
+fn github_issue_close_builds_patch_request() {
     let repo = github()
         .repo()
         .owner("akira-io")
@@ -92,5 +95,12 @@ fn github_issue_delete_builds_close_request() {
         .get();
     let issue_resource = github().issue().repo(repo).id("42").get();
 
-    assert_eq!(issue_resource.delete().method(), &RequestMethod::Patch);
+    let issue_patch = IssuePatchBuilder::make(issue_resource.issue().clone())
+        .closed()
+        .get();
+
+    assert_eq!(
+        issue_resource.close(&issue_patch).method(),
+        &RequestMethod::Patch
+    );
 }

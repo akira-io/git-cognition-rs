@@ -1,7 +1,5 @@
 use vcs_provider_bitbucket::bitbucket;
-use vcs_provider_core::{
-    RepositoryDraftBuilder, RepositoryPatchBuilder, RequestMethod, Visibility,
-};
+use vcs_provider_core::{RepositoryPatchBuilder, RequestMethod, Visibility};
 
 #[test]
 fn bitbucket_repo_get_targets_repository_endpoint() {
@@ -84,29 +82,30 @@ fn bitbucket_repo_create_builds_put_request() {
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
-    let draft = RepositoryDraftBuilder::make(repo.clone().into())
+    let create_request = bitbucket()
+        .repo()
+        .draft(repo.clone())
         .visibility(Visibility::Private)
-        .get();
-    let create_request = repo.create(&draft);
+        .create();
 
     assert_eq!(create_request.method(), &RequestMethod::Put);
     assert!(create_request.body().is_some());
 }
 
 #[test]
-fn bitbucket_repo_put_builds_put_request() {
+fn bitbucket_repo_update_builds_put_request() {
     let repo = bitbucket()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
-    let patch = RepositoryPatchBuilder::make(repo.clone().into())
+    let repository_patch = RepositoryPatchBuilder::make(repo.clone().into())
         .visibility(Visibility::Public)
         .get();
-    let put_request = repo.put(&patch);
+    let update_request = repo.update(&repository_patch);
 
-    assert_eq!(put_request.method(), &RequestMethod::Put);
-    assert!(put_request.body().is_some());
+    assert_eq!(update_request.method(), &RequestMethod::Put);
+    assert!(update_request.body().is_some());
 }
 
 #[test]

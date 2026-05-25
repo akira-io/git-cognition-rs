@@ -25,7 +25,7 @@ let code_reviews = gitlab()
     .code_reviews()
     .pagination()
     .limit(50)
-        .list();
+    .list();
 
 let url = code_reviews.url();
 ```
@@ -41,7 +41,7 @@ let code_reviews = bitbucket()
     .pagination()
     .limit(50)
     .cursor("2")
-        .list();
+    .list();
 
 let url = code_reviews.url();
 ```
@@ -100,7 +100,7 @@ Bitbucket maps code reviews to pull requests:
 
 Pagination remains provider-neutral in the caller. Providers map it to their own query names.
 
-## Create, Put, Delete
+## Create, Update, Close, Delete
 
 Use `CodeReviewDraft` to create code reviews and `CodeReviewPatch` to update or close them:
 
@@ -111,30 +111,30 @@ let repo = gitlab()
     .name("vcs-providers-rs")
     .get();
 
-let draft = code_review()
+let create_request = gitlab()
+    .code_review()
     .draft()
     .repo(repo.clone())
     .title("Add release mutations")
     .source("feature/releases")
     .target("main")
     .body("Adds release request builders.")
-    .get();
-
-let create_request = gitlab().code_review().collection().create(&draft);
+    .create();
 
 let code_review = gitlab().code_review().repo(repo).id("42").get();
-let patch = CodeReviewPatchBuilder::make(code_review.code_review().clone())
+let code_review_patch = CodeReviewPatchBuilder::make(code_review.code_review().clone())
     .closed()
     .get();
 
-let update_request = code_review.put(&patch);
+let update_request = code_review.update(&code_review_patch);
+let close_request = code_review.close();
 let delete_request = code_review.delete();
 ```
 
 Provider support:
 
-| Provider | Create | Update | Delete |
-| --- | --- | --- | --- |
-| GitHub | supported | supported | close-only through update |
-| GitLab | supported | supported | supported |
-| Bitbucket | supported | supported | decline through delete request |
+| Provider | Create | Update | Close | Delete |
+| --- | --- | --- | --- | --- |
+| GitHub | supported | supported | supported | unsupported |
+| GitLab | supported | supported | supported | supported |
+| Bitbucket | supported | supported | supported | unsupported |

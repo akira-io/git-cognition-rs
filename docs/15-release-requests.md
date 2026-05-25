@@ -25,7 +25,7 @@ let releases = gitlab()
     .releases()
     .pagination()
     .limit(50)
-        .list();
+    .list();
 
 let url = releases.url();
 ```
@@ -79,7 +79,7 @@ Bitbucket Cloud is intentionally not exposed through this facade. Bitbucket Clou
 
 Pagination remains provider-neutral in the caller. Providers map it to their own query names.
 
-## Create, Patch, Delete
+## Create, Update, Delete
 
 Use `ReleaseDraft` to create releases and `ReleasePatch` to update release notes:
 
@@ -90,22 +90,21 @@ let repo = github()
     .name("vcs-providers-rs")
     .get();
 
-let draft = release()
+let create_request = github()
+    .release()
     .draft()
     .repo(repo.clone())
     .tag("v1.0.0")
     .name("v1.0.0")
     .body("Release notes")
-    .get();
-
-let create_request = github().release().collection().create(&draft);
+    .create();
 
 let release = github().release().repo(repo).id("123").get();
-let patch = ReleasePatchBuilder::make(release.release().clone())
+let release_patch = ReleasePatchBuilder::make(release.release().clone())
     .body("Updated release notes")
     .get();
 
-let update_request = release.patch(&patch);
+let update_request = release.update(&release_patch);
 let delete_request = release.delete();
 ```
 

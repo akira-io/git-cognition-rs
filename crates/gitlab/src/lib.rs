@@ -1,10 +1,11 @@
 use vcs_provider_core::{
-    AuthHeaderStyle, AuthKind, Capability, CodeReviews, Issues, ManagedCodeReviewProvider,
-    ManagedIssueProvider, ManagedProvider, MissingCodeReviewId, MissingCodeReviewRepo,
-    MissingOwnerName, MissingReleaseId, MissingReleaseRepo, MissingRepositoryName, Pipelines,
-    Provider, ProviderDescriptor, ProviderId, Releases, Repos, TransportNotConfiguredCodeReviews,
-    TransportNotConfiguredIssues, TransportNotConfiguredPipelines, TransportNotConfiguredReleases,
-    TransportNotConfiguredRepos, capabilities,
+    AuthHeaderStyle, AuthKind, Capability, CodeReviewPatchBuilder, CodeReviews, Issues,
+    ManagedCodeReviewProvider, ManagedIssueDeleteProvider, ManagedIssueProvider, ManagedProvider,
+    MissingCodeReviewId, MissingCodeReviewRepo, MissingOwnerName, MissingReleaseId,
+    MissingReleaseRepo, MissingRepositoryName, Pipelines, Provider, ProviderDescriptor, ProviderId,
+    Releases, Repos, TransportNotConfiguredCodeReviews, TransportNotConfiguredIssues,
+    TransportNotConfiguredPipelines, TransportNotConfiguredReleases, TransportNotConfiguredRepos,
+    capabilities,
 };
 
 mod code_reviews;
@@ -138,7 +139,9 @@ impl ManagedIssueProvider for GitLabProvider {
     ) -> vcs_provider_core::Request {
         GitLabIssue::make(DEFAULT_BASE_URL, patch.issue().clone()).update(patch)
     }
+}
 
+impl ManagedIssueDeleteProvider for GitLabProvider {
     fn issue_delete_request(&self, issue: &vcs_provider_core::Issue) -> vcs_provider_core::Request {
         GitLabIssue::make(DEFAULT_BASE_URL, issue.clone()).delete()
     }
@@ -173,6 +176,19 @@ impl ManagedCodeReviewProvider for GitLabProvider {
         GitLabCodeReview::make(DEFAULT_BASE_URL, patch.code_review().clone()).update(patch)
     }
 
+    fn code_review_close_request(
+        &self,
+        code_review: &vcs_provider_core::CodeReview,
+    ) -> vcs_provider_core::Request {
+        let close_patch = CodeReviewPatchBuilder::make(code_review.clone())
+            .closed()
+            .get();
+
+        GitLabCodeReview::make(DEFAULT_BASE_URL, code_review.clone()).update(&close_patch)
+    }
+}
+
+impl vcs_provider_core::ManagedCodeReviewDeleteProvider for GitLabProvider {
     fn code_review_delete_request(
         &self,
         code_review: &vcs_provider_core::CodeReview,

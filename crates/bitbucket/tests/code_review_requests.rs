@@ -1,5 +1,5 @@
 use vcs_provider_bitbucket::bitbucket;
-use vcs_provider_core::{CodeReviewPatchBuilder, RequestMethod, code_review};
+use vcs_provider_core::{CodeReviewPatchBuilder, RequestMethod};
 
 #[test]
 fn bitbucket_code_review_get_targets_repository_endpoint() {
@@ -43,7 +43,15 @@ fn bitbucket_code_review_builder_accepts_existing_repo() {
 
 #[test]
 fn bitbucket_code_review_create_builds_post_request() {
-    let create_request = bitbucket().code_review().collection().create(&draft());
+    let create_request = bitbucket()
+        .code_review()
+        .draft()
+        .repo(repository())
+        .title("Add mutable operations")
+        .source("feature")
+        .target("main")
+        .body("Details")
+        .create();
 
     assert_eq!(create_request.method(), &RequestMethod::Post);
     assert!(create_request.body().is_some());
@@ -52,15 +60,15 @@ fn bitbucket_code_review_create_builds_post_request() {
 #[test]
 fn bitbucket_code_review_update_builds_put_request() {
     assert_eq!(
-        code_review_resource().put(&patch()).method(),
+        code_review_resource().update(&code_review_patch()).method(),
         &RequestMethod::Put
     );
 }
 
 #[test]
-fn bitbucket_code_review_delete_builds_decline_request() {
+fn bitbucket_code_review_close_builds_decline_request() {
     assert_eq!(
-        code_review_resource().delete().method(),
+        code_review_resource().close().method(),
         &RequestMethod::Post
     );
 }
@@ -78,18 +86,7 @@ fn code_review_resource()
     bitbucket().code_review().repo(repository()).id("42").get()
 }
 
-fn draft() -> vcs_provider_core::CodeReviewDraft {
-    code_review()
-        .draft()
-        .repo(repository())
-        .title("Add mutable operations")
-        .source("feature")
-        .target("main")
-        .body("Details")
-        .get()
-}
-
-fn patch() -> vcs_provider_core::CodeReviewPatch {
+fn code_review_patch() -> vcs_provider_core::CodeReviewPatch {
     CodeReviewPatchBuilder::make(code_review_resource().code_review().clone())
         .closed()
         .get()

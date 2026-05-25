@@ -25,7 +25,7 @@ let issues = gitlab()
     .issues()
     .pagination()
     .limit(50)
-        .list();
+    .list();
 
 let url = issues.url();
 ```
@@ -41,7 +41,7 @@ let issues = github()
     .pagination()
     .limit(50)
     .cursor("2")
-        .list();
+    .list();
 
 let url = issues.url();
 ```
@@ -100,7 +100,7 @@ advertise `Capability::Issues` and does not implement `ManagedIssueProvider`. Ji
 tracking should be modeled as a separate extension instead of leaking Jira behavior into the
 provider-neutral issue contract.
 
-## Create, Patch, Delete
+## Create, Update, Close
 
 Use `IssueDraft` to create issues and `IssuePatch` to update or close them:
 
@@ -111,28 +111,27 @@ let repo = github()
     .name("vcs-providers-rs")
     .get();
 
-let draft = issue()
+let create_request = github()
+    .issue()
     .draft()
     .repo(repo.clone())
     .title("Fix pagination")
     .body("The cursor should be opaque.")
-    .get();
-
-let create_request = github().issue().collection().create(&draft);
+    .create();
 
 let issue = github().issue().repo(repo).id("42").get();
-let patch = IssuePatchBuilder::make(issue.issue().clone())
+let issue_patch = IssuePatchBuilder::make(issue.issue().clone())
     .closed()
     .get();
 
-let update_request = issue.patch(&patch);
-let delete_request = issue.delete();
+let update_request = issue.update(&issue_patch);
+let close_request = issue.close(&issue_patch);
 ```
 
 Provider support:
 
-| Provider | Create | Update | Delete |
-| --- | --- | --- | --- |
-| GitHub | supported | supported | close-only through update |
-| GitLab | supported | supported | supported |
-| Bitbucket | unsupported | unsupported | unsupported |
+| Provider | Create | Update | Close | Delete |
+| --- | --- | --- | --- | --- |
+| GitHub | supported | supported | supported | unsupported |
+| GitLab | supported | supported | supported | supported |
+| Bitbucket | unsupported | unsupported | unsupported | unsupported |

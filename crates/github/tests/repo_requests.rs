@@ -1,6 +1,4 @@
-use vcs_provider_core::{
-    RepositoryDraftBuilder, RepositoryPatchBuilder, RequestMethod, Visibility,
-};
+use vcs_provider_core::{RepositoryPatchBuilder, RequestMethod, Visibility};
 use vcs_provider_github::github;
 
 #[test]
@@ -84,29 +82,30 @@ fn github_repo_create_builds_post_request() {
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
-    let draft = RepositoryDraftBuilder::make(repo.clone().into())
+    let create_request = github()
+        .repo()
+        .draft(repo.clone())
         .visibility(Visibility::Private)
-        .get();
-    let create_request = github().repo().collection().create(&draft);
+        .create();
 
     assert_eq!(create_request.method(), &RequestMethod::Post);
     assert!(create_request.body().is_some());
 }
 
 #[test]
-fn github_repo_patch_builds_patch_request() {
+fn github_repo_update_builds_patch_request() {
     let repo = github()
         .repo()
         .owner("akira-io")
         .name("vcs-providers-rs")
         .get();
-    let patch = RepositoryPatchBuilder::make(repo.clone().into())
+    let repository_patch = RepositoryPatchBuilder::make(repo.clone().into())
         .visibility(Visibility::Public)
         .get();
-    let patch_request = repo.patch(&patch);
+    let update_request = repo.update(&repository_patch);
 
-    assert_eq!(patch_request.method(), &RequestMethod::Patch);
-    assert!(patch_request.body().is_some());
+    assert_eq!(update_request.method(), &RequestMethod::Patch);
+    assert!(update_request.body().is_some());
 }
 
 #[test]

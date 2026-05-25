@@ -38,7 +38,7 @@ impl BitbucketCodeReview {
             .build()
     }
 
-    pub fn delete(&self) -> Request {
+    pub fn close(&self) -> Request {
         request()
             .post(
                 url(&self.base_url)

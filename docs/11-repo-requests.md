@@ -45,18 +45,19 @@ let repo = github()
     .name("vcs-providers-rs")
     .get();
 
-let draft = RepositoryDraftBuilder::make(repo.clone().into())
+let create_request = github()
+    .repo()
+    .draft(repo.clone())
     .visibility(Visibility::Private)
     .description("Universal VCS provider abstraction")
-    .get();
+    .create();
 
-let patch = RepositoryPatchBuilder::make(repo.clone().into())
+let repository_patch = RepositoryPatchBuilder::make(repo.clone().into())
     .visibility(Visibility::Public)
     .description("Universal VCS provider abstraction")
     .get();
 
-let create_request = github().repo().collection().create(&draft);
-let update_request = repo.patch(&patch);
+let update_request = repo.update(&repository_patch);
 let delete_request = repo.delete();
 ```
 

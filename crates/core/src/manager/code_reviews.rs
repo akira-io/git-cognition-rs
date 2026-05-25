@@ -1,10 +1,12 @@
 use crate::{
-    CodeReview, CodeReviewBuilder, CodeReviewDraft, CodeReviewListQuery, CodeReviewPatch,
-    CodeReviewQueryBuilder, MissingCodeReviewId, MissingCodeReviewRepo, PageRequest,
-    PageRequestBuilder, ProvidedCodeReviewId, ProvidedCodeReviewRepo, Repo, Request, RequestUrl,
+    CodeReview, CodeReviewBuilder, CodeReviewDraftBuilder, CodeReviewListQuery, CodeReviewPatch,
+    CodeReviewQueryBuilder, MissingCodeReviewDraftRepo, MissingCodeReviewId, MissingCodeReviewRepo,
+    MissingCodeReviewTitle, PageRequest, PageRequestBuilder, ProvidedCodeReviewDraftRepo,
+    ProvidedCodeReviewId, ProvidedCodeReviewRepo, ProvidedCodeReviewTitle, Repo, Request,
+    RequestUrl,
 };
 
-use super::{ManagedCodeReviewProvider, VcsManager};
+use super::{ManagedCodeReviewDeleteProvider, ManagedCodeReviewProvider, VcsManager};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedCodeReviewBuilder<Driver, RepoState, CodeReviewIdState> {
@@ -24,6 +26,16 @@ where
 
     pub fn query(&self) -> CodeReviewQueryBuilder {
         CodeReviewQueryBuilder
+    }
+
+    pub fn draft(
+        &self,
+    ) -> ManagedCodeReviewDraftBuilder<Driver, MissingCodeReviewDraftRepo, MissingCodeReviewTitle>
+    {
+        ManagedCodeReviewDraftBuilder {
+            manager: self.manager.clone(),
+            draft: crate::code_review().draft(),
+        }
     }
 }
 
@@ -75,6 +87,75 @@ where
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedCodeReviewDraftBuilder<Driver, RepoState, TitleState> {
+    manager: VcsManager<Driver>,
+    draft: CodeReviewDraftBuilder<RepoState, TitleState>,
+}
+
+impl<Driver, TitleState>
+    ManagedCodeReviewDraftBuilder<Driver, MissingCodeReviewDraftRepo, TitleState>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn repo(
+        self,
+        repo: impl Into<Repo>,
+    ) -> ManagedCodeReviewDraftBuilder<Driver, ProvidedCodeReviewDraftRepo, TitleState> {
+        ManagedCodeReviewDraftBuilder {
+            manager: self.manager,
+            draft: self.draft.repo(repo),
+        }
+    }
+}
+
+impl<Driver, RepoState> ManagedCodeReviewDraftBuilder<Driver, RepoState, MissingCodeReviewTitle>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn title(
+        self,
+        title: impl Into<String>,
+    ) -> ManagedCodeReviewDraftBuilder<Driver, RepoState, ProvidedCodeReviewTitle> {
+        ManagedCodeReviewDraftBuilder {
+            manager: self.manager,
+            draft: self.draft.title(title),
+        }
+    }
+}
+
+impl<Driver, RepoState, TitleState> ManagedCodeReviewDraftBuilder<Driver, RepoState, TitleState>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn source(mut self, source: impl Into<String>) -> Self {
+        self.draft = self.draft.source(source);
+        self
+    }
+
+    pub fn target(mut self, target: impl Into<String>) -> Self {
+        self.draft = self.draft.target(target);
+        self
+    }
+
+    pub fn body(mut self, body: impl Into<String>) -> Self {
+        self.draft = self.draft.body(body);
+        self
+    }
+}
+
+impl<Driver>
+    ManagedCodeReviewDraftBuilder<Driver, ProvidedCodeReviewDraftRepo, ProvidedCodeReviewTitle>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn create(self) -> Request {
+        self.manager
+            .driver
+            .code_review_create_request(&self.draft.get())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedCodeReview<Driver> {
     manager: VcsManager<Driver>,
     code_review: CodeReview,
@@ -100,14 +181,17 @@ where
         self.manager.driver.code_review_update_request(patch)
     }
 
-    pub fn patch(&self, patch: &CodeReviewPatch) -> Request {
-        self.update(patch)
+    pub fn close(&self) -> Request {
+        self.manager
+            .driver
+            .code_review_close_request(&self.code_review)
     }
+}
 
-    pub fn put(&self, patch: &CodeReviewPatch) -> Request {
-        self.update(patch)
-    }
-
+impl<Driver> ManagedCodeReview<Driver>
+where
+    Driver: ManagedCodeReviewDeleteProvider,
+{
     pub fn delete(&self) -> Request {
         self.manager
             .driver
@@ -126,10 +210,6 @@ where
 {
     pub fn list(&self, query: &CodeReviewListQuery) -> RequestUrl {
         self.manager.driver.code_review_list_url(query)
-    }
-
-    pub fn create(&self, draft: &CodeReviewDraft) -> Request {
-        self.manager.driver.code_review_create_request(draft)
     }
 }
 
