@@ -1,13 +1,20 @@
 use crate::Provider;
 use crate::{
-    Issue, IssueListQuery, MissingIssueId, MissingIssueRepo, MissingOwnerName,
-    MissingRepositoryName, PageRequest, ProvidedIssueId, ProvidedIssueRepo, ProvidedOwnerName,
-    ProvidedRepositoryName, Repo, RepoBuilder, RepoQueryBuilder, RepositoryListQuery,
-    RepositorySearchQuery, RequestUrl, issue, repo,
+    CodeReview, CodeReviewListQuery, Issue, IssueListQuery, MissingCodeReviewId,
+    MissingCodeReviewRepo, MissingIssueId, MissingIssueRepo, MissingOwnerName,
+    MissingRepositoryName, PageRequest, ProvidedCodeReviewId, ProvidedCodeReviewRepo,
+    ProvidedIssueId, ProvidedIssueRepo, ProvidedOwnerName, ProvidedRepositoryName, Repo,
+    RepoBuilder, RepoQueryBuilder, RepositoryListQuery, RepositorySearchQuery, RequestUrl,
+    code_review, issue, repo,
 };
 
+mod code_reviews;
 mod issues;
 
+pub use code_reviews::{
+    ManagedCodeReview, ManagedCodeReviewBuilder, ManagedCodeReviewCollection,
+    ManagedRepoCodeReviews, ManagedRepoCodeReviewsPagination,
+};
 pub use issues::{
     ManagedIssue, ManagedIssueBuilder, ManagedIssueCollection, ManagedRepoIssues,
     ManagedRepoIssuesPagination,
@@ -39,6 +46,18 @@ where
         }
     }
 
+    pub fn code_review(
+        &self,
+    ) -> ManagedCodeReviewBuilder<Driver, MissingCodeReviewRepo, MissingCodeReviewId>
+    where
+        Driver: ManagedCodeReviewProvider,
+    {
+        ManagedCodeReviewBuilder {
+            manager: self.clone(),
+            code_review: code_review(),
+        }
+    }
+
     pub fn driver(&self) -> &Driver {
         &self.driver
     }
@@ -64,6 +83,12 @@ pub trait ManagedIssueProvider: ManagedProvider {
     fn issue_url(&self, issue: &Issue) -> RequestUrl;
 
     fn issue_list_url(&self, query: &IssueListQuery) -> RequestUrl;
+}
+
+pub trait ManagedCodeReviewProvider: ManagedProvider {
+    fn code_review_url(&self, code_review: &CodeReview) -> RequestUrl;
+
+    fn code_review_list_url(&self, query: &CodeReviewListQuery) -> RequestUrl;
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -180,6 +205,29 @@ where
     }
 }
 
+impl<Driver> ManagedRepoBuilder<Driver, ProvidedOwnerName, ProvidedRepositoryName>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn code_review(
+        self,
+        id: impl Into<String>,
+    ) -> ManagedCodeReviewBuilder<Driver, ProvidedCodeReviewRepo, ProvidedCodeReviewId> {
+        ManagedCodeReviewBuilder {
+            manager: self.manager,
+            code_review: code_review().repo(self.repo.build()).id(id),
+        }
+    }
+
+    pub fn code_reviews(self) -> ManagedRepoCodeReviews<Driver> {
+        ManagedRepoCodeReviews {
+            manager: self.manager,
+            repo: self.repo.build(),
+            page: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedRepo<Driver> {
     manager: VcsManager<Driver>,
@@ -218,5 +266,11 @@ where
 
     pub fn search(&self, query: &RepositorySearchQuery) -> RequestUrl {
         self.manager.driver.repo_search_url(query)
+    }
+}
+
+impl<Driver> From<ManagedRepo<Driver>> for Repo {
+    fn from(managed_repo: ManagedRepo<Driver>) -> Self {
+        managed_repo.repo
     }
 }

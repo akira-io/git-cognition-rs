@@ -73,9 +73,12 @@ impl CodeReviewBuilder<MissingCodeReviewRepo, MissingCodeReviewId> {
 }
 
 impl<CodeReviewIdState> CodeReviewBuilder<MissingCodeReviewRepo, CodeReviewIdState> {
-    pub fn repo(self, repo: Repo) -> CodeReviewBuilder<ProvidedCodeReviewRepo, CodeReviewIdState> {
+    pub fn repo(
+        self,
+        repo: impl Into<Repo>,
+    ) -> CodeReviewBuilder<ProvidedCodeReviewRepo, CodeReviewIdState> {
         CodeReviewBuilder {
-            repo: ProvidedCodeReviewRepo { repo },
+            repo: ProvidedCodeReviewRepo { repo: repo.into() },
             id: self.id,
         }
     }
@@ -187,10 +190,10 @@ pub struct CodeReviewDraftBuilder<RepoState, TitleState> {
 impl<TitleState> CodeReviewDraftBuilder<MissingCodeReviewDraftRepo, TitleState> {
     pub fn repo(
         self,
-        repo: Repo,
+        repo: impl Into<Repo>,
     ) -> CodeReviewDraftBuilder<ProvidedCodeReviewDraftRepo, TitleState> {
         CodeReviewDraftBuilder {
-            repo: ProvidedCodeReviewDraftRepo { repo },
+            repo: ProvidedCodeReviewDraftRepo { repo: repo.into() },
             title: self.title,
         }
     }

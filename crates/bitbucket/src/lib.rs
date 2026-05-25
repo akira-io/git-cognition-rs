@@ -1,13 +1,16 @@
 use vcs_provider_core::{
-    AuthHeaderStyle, AuthKind, Capability, CodeReviews, Issues, ManagedProvider, MissingOwnerName,
+    AuthHeaderStyle, AuthKind, Capability, CodeReviews, Issues, ManagedCodeReviewProvider,
+    ManagedProvider, MissingCodeReviewId, MissingCodeReviewRepo, MissingOwnerName,
     MissingRepositoryName, Pipelines, Provider, ProviderDescriptor, ProviderId, Releases, Repos,
     TransportNotConfiguredCodeReviews, TransportNotConfiguredIssues,
     TransportNotConfiguredPipelines, TransportNotConfiguredReleases, TransportNotConfiguredRepos,
     capabilities,
 };
 
+mod code_reviews;
 mod repos;
 
+pub use code_reviews::{BitbucketCodeReview, BitbucketCodeReviewCollection};
 pub use repos::{BitbucketRepo, BitbucketRepoCollection};
 
 pub const PROVIDER_ID: &str = "bitbucket";
@@ -22,6 +25,13 @@ impl BitbucketProvider {
         &self,
     ) -> vcs_provider_core::ManagedRepoBuilder<Self, MissingOwnerName, MissingRepositoryName> {
         vcs_provider_core::vcs(*self).repo()
+    }
+
+    pub fn code_review(
+        &self,
+    ) -> vcs_provider_core::ManagedCodeReviewBuilder<Self, MissingCodeReviewRepo, MissingCodeReviewId>
+    {
+        vcs_provider_core::vcs(*self).code_review()
     }
 
     pub fn pagination(&self) -> vcs_provider_core::PaginationBuilder {
@@ -62,6 +72,22 @@ impl ManagedProvider for BitbucketProvider {
         query: &vcs_provider_core::RepositorySearchQuery,
     ) -> vcs_provider_core::RequestUrl {
         BitbucketRepoCollection::make(DEFAULT_BASE_URL).search(query)
+    }
+}
+
+impl ManagedCodeReviewProvider for BitbucketProvider {
+    fn code_review_url(
+        &self,
+        code_review: &vcs_provider_core::CodeReview,
+    ) -> vcs_provider_core::RequestUrl {
+        BitbucketCodeReview::make(DEFAULT_BASE_URL, code_review.clone()).url()
+    }
+
+    fn code_review_list_url(
+        &self,
+        query: &vcs_provider_core::CodeReviewListQuery,
+    ) -> vcs_provider_core::RequestUrl {
+        BitbucketCodeReviewCollection::make(DEFAULT_BASE_URL).list(query)
     }
 }
 

@@ -3,7 +3,7 @@ use crate::{
     PageRequest, PageRequestBuilder, ProvidedIssueId, ProvidedIssueRepo, Repo, RequestUrl,
 };
 
-use super::{ManagedIssueProvider, ManagedRepo, VcsManager};
+use super::{ManagedIssueProvider, VcsManager};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ManagedIssueBuilder<Driver, RepoState, IssueIdState> {
@@ -88,12 +88,6 @@ where
 
     pub fn repo(&self) -> &Repo {
         self.issue.repo()
-    }
-}
-
-impl<Driver> From<ManagedRepo<Driver>> for Repo {
-    fn from(managed_repo: ManagedRepo<Driver>) -> Self {
-        managed_repo.repo
     }
 }
 

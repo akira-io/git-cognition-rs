@@ -1,0 +1,175 @@
+use crate::{
+    CodeReview, CodeReviewBuilder, CodeReviewListQuery, CodeReviewQueryBuilder,
+    MissingCodeReviewId, MissingCodeReviewRepo, PageRequest, PageRequestBuilder,
+    ProvidedCodeReviewId, ProvidedCodeReviewRepo, Repo, RequestUrl,
+};
+
+use super::{ManagedCodeReviewProvider, VcsManager};
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedCodeReviewBuilder<Driver, RepoState, CodeReviewIdState> {
+    pub(super) manager: VcsManager<Driver>,
+    pub(super) code_review: CodeReviewBuilder<RepoState, CodeReviewIdState>,
+}
+
+impl<Driver> ManagedCodeReviewBuilder<Driver, MissingCodeReviewRepo, MissingCodeReviewId>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn collection(&self) -> ManagedCodeReviewCollection<Driver> {
+        ManagedCodeReviewCollection {
+            manager: self.manager.clone(),
+        }
+    }
+
+    pub fn query(&self) -> CodeReviewQueryBuilder {
+        CodeReviewQueryBuilder
+    }
+}
+
+impl<Driver, CodeReviewIdState>
+    ManagedCodeReviewBuilder<Driver, MissingCodeReviewRepo, CodeReviewIdState>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn repo(
+        self,
+        repo: impl Into<Repo>,
+    ) -> ManagedCodeReviewBuilder<Driver, ProvidedCodeReviewRepo, CodeReviewIdState> {
+        ManagedCodeReviewBuilder {
+            manager: self.manager,
+            code_review: self.code_review.repo(repo),
+        }
+    }
+}
+
+impl<Driver, RepoState> ManagedCodeReviewBuilder<Driver, RepoState, MissingCodeReviewId>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn id(
+        self,
+        id: impl Into<String>,
+    ) -> ManagedCodeReviewBuilder<Driver, RepoState, ProvidedCodeReviewId> {
+        ManagedCodeReviewBuilder {
+            manager: self.manager,
+            code_review: self.code_review.id(id),
+        }
+    }
+}
+
+impl<Driver> ManagedCodeReviewBuilder<Driver, ProvidedCodeReviewRepo, ProvidedCodeReviewId>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn build(self) -> ManagedCodeReview<Driver> {
+        ManagedCodeReview {
+            manager: self.manager,
+            code_review: self.code_review.build(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedCodeReview<Driver> {
+    manager: VcsManager<Driver>,
+    code_review: CodeReview,
+}
+
+impl<Driver> ManagedCodeReview<Driver>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn url(&self) -> RequestUrl {
+        self.manager.driver.code_review_url(&self.code_review)
+    }
+
+    pub fn code_review(&self) -> &CodeReview {
+        &self.code_review
+    }
+
+    pub fn repo(&self) -> &Repo {
+        self.code_review.repo()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedCodeReviewCollection<Driver> {
+    manager: VcsManager<Driver>,
+}
+
+impl<Driver> ManagedCodeReviewCollection<Driver>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn list(&self, query: &CodeReviewListQuery) -> RequestUrl {
+        self.manager.driver.code_review_list_url(query)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedRepoCodeReviews<Driver> {
+    pub(super) manager: VcsManager<Driver>,
+    pub(super) repo: Repo,
+    pub(super) page: Option<PageRequest>,
+}
+
+impl<Driver> ManagedRepoCodeReviews<Driver>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn url(&self) -> RequestUrl {
+        let query = self.query();
+        self.manager.driver.code_review_list_url(&query)
+    }
+
+    pub fn pagination(self) -> ManagedRepoCodeReviewsPagination<Driver> {
+        ManagedRepoCodeReviewsPagination {
+            manager: self.manager,
+            repo: self.repo,
+            page: PageRequestBuilder::default(),
+        }
+    }
+
+    pub fn repo(&self) -> &Repo {
+        &self.repo
+    }
+
+    fn query(&self) -> CodeReviewListQuery {
+        CodeReviewQueryBuilder.list(self.repo.clone(), self.page.clone())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedRepoCodeReviewsPagination<Driver> {
+    manager: VcsManager<Driver>,
+    repo: Repo,
+    page: PageRequestBuilder,
+}
+
+impl<Driver> ManagedRepoCodeReviewsPagination<Driver>
+where
+    Driver: ManagedCodeReviewProvider,
+{
+    pub fn limit(mut self, limit: u16) -> Self {
+        self.page = self.page.limit(limit);
+        self
+    }
+
+    pub fn cursor(mut self, cursor: impl Into<String>) -> Self {
+        self.page = self.page.cursor(cursor);
+        self
+    }
+
+    pub fn build(self) -> ManagedRepoCodeReviews<Driver> {
+        ManagedRepoCodeReviews {
+            manager: self.manager,
+            repo: self.repo,
+            page: Some(self.page.build()),
+        }
+    }
+
+    pub fn url(self) -> RequestUrl {
+        self.build().url()
+    }
+}
