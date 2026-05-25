@@ -1,14 +1,17 @@
 use vcs_provider_core::{
-    AuthHeaderStyle, AuthKind, Capability, CodeReviews, Issues, ManagedIssueProvider,
-    ManagedProvider, MissingOwnerName, MissingRepositoryName, Pipelines, Provider,
-    ProviderDescriptor, ProviderId, Releases, Repos, TransportNotConfiguredCodeReviews,
-    TransportNotConfiguredIssues, TransportNotConfiguredPipelines, TransportNotConfiguredReleases,
-    TransportNotConfiguredRepos, capabilities,
+    AuthHeaderStyle, AuthKind, Capability, CodeReviews, Issues, ManagedCodeReviewProvider,
+    ManagedIssueProvider, ManagedProvider, MissingCodeReviewId, MissingCodeReviewRepo,
+    MissingOwnerName, MissingRepositoryName, Pipelines, Provider, ProviderDescriptor, ProviderId,
+    Releases, Repos, TransportNotConfiguredCodeReviews, TransportNotConfiguredIssues,
+    TransportNotConfiguredPipelines, TransportNotConfiguredReleases, TransportNotConfiguredRepos,
+    capabilities,
 };
 
+mod code_reviews;
 mod issues;
 mod repos;
 
+pub use code_reviews::{GitHubCodeReview, GitHubCodeReviewCollection};
 pub use issues::{GitHubIssue, GitHubIssueCollection};
 pub use repos::{GitHubRepo, GitHubRepoCollection};
 
@@ -34,6 +37,13 @@ impl GitHubProvider {
         vcs_provider_core::MissingIssueId,
     > {
         vcs_provider_core::vcs(*self).issue()
+    }
+
+    pub fn code_review(
+        &self,
+    ) -> vcs_provider_core::ManagedCodeReviewBuilder<Self, MissingCodeReviewRepo, MissingCodeReviewId>
+    {
+        vcs_provider_core::vcs(*self).code_review()
     }
 
     pub fn pagination(&self) -> vcs_provider_core::PaginationBuilder {
@@ -87,6 +97,22 @@ impl ManagedIssueProvider for GitHubProvider {
         query: &vcs_provider_core::IssueListQuery,
     ) -> vcs_provider_core::RequestUrl {
         GitHubIssueCollection::make(DEFAULT_BASE_URL).list(query)
+    }
+}
+
+impl ManagedCodeReviewProvider for GitHubProvider {
+    fn code_review_url(
+        &self,
+        code_review: &vcs_provider_core::CodeReview,
+    ) -> vcs_provider_core::RequestUrl {
+        GitHubCodeReview::make(DEFAULT_BASE_URL, code_review.clone()).url()
+    }
+
+    fn code_review_list_url(
+        &self,
+        query: &vcs_provider_core::CodeReviewListQuery,
+    ) -> vcs_provider_core::RequestUrl {
+        GitHubCodeReviewCollection::make(DEFAULT_BASE_URL).list(query)
     }
 }
 
