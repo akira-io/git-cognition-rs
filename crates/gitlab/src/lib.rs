@@ -1,6 +1,6 @@
 use vcs_provider_core::{
-    AuthHeaderStyle, AuthKind, Capability, CapabilitySet, Provider, ProviderDescriptor, ProviderId,
-    Repos, TransportNotConfiguredRepos,
+    AuthHeaderStyle, AuthKind, Capability, Provider, ProviderDescriptor, ProviderId, Repos,
+    TransportNotConfiguredRepos, capabilities,
 };
 
 pub const PROVIDER_ID: &str = "gitlab";
@@ -15,7 +15,7 @@ impl Provider for GitLabProvider {
         ProviderDescriptor::make(
             ProviderId::make(PROVIDER_ID),
             DISPLAY_NAME,
-            CapabilitySet::make([
+            capabilities().make([
                 Capability::Repos,
                 Capability::Issues,
                 Capability::CodeReviews,

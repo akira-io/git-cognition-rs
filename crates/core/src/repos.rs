@@ -41,7 +41,7 @@ pub struct Repo {
 
 impl Repo {
     pub fn make() -> RepoBuilder<MissingOwnerName, MissingRepositoryName> {
-        repo()
+        crate::repo()
     }
 
     pub fn owner(&self) -> &OwnerName {
@@ -53,19 +53,12 @@ impl Repo {
     }
 }
 
-pub fn repo() -> RepoBuilder<MissingOwnerName, MissingRepositoryName> {
-    RepoBuilder {
-        owner_name: MissingOwnerName,
-        repository_name: MissingRepositoryName,
-    }
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MissingOwnerName;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProvidedOwnerName {
-    owner_name: OwnerName,
+    pub(crate) owner_name: OwnerName,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -73,13 +66,13 @@ pub struct MissingRepositoryName;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProvidedRepositoryName {
-    repository_name: RepositoryName,
+    pub(crate) repository_name: RepositoryName,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RepoBuilder<OwnerNameState, RepositoryNameState> {
-    owner_name: OwnerNameState,
-    repository_name: RepositoryNameState,
+    pub(crate) owner_name: OwnerNameState,
+    pub(crate) repository_name: RepositoryNameState,
 }
 
 impl<RepositoryNameState> RepoBuilder<MissingOwnerName, RepositoryNameState> {

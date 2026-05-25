@@ -3,14 +3,16 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
+mod helpers;
 mod registry;
 mod repos;
 
+pub use helpers::{CapabilitySetBuilder, capabilities, repo};
 pub use registry::{ProviderRegistry, ProviderRegistryBuilder};
 pub use repos::{
     BoxFuture, Branch, Commit, LifecycleState, OwnerName, Page, Repo, RepoBuilder, Repos,
     Repository, RepositoryBuilder, RepositoryListQuery, RepositoryName, RepositorySearchQuery,
-    TransportNotConfiguredRepos, Visibility, repo,
+    TransportNotConfiguredRepos, Visibility,
 };
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
