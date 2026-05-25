@@ -48,6 +48,126 @@ pub struct Repository {
     lifecycle_state: LifecycleState,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct RepositoryDraft {
+    repo: Repo,
+    visibility: Visibility,
+    description: Option<String>,
+}
+
+impl RepositoryDraft {
+    pub fn make(repo: Repo, visibility: Visibility) -> Self {
+        Self {
+            repo,
+            visibility,
+            description: None,
+        }
+    }
+
+    pub fn repo(&self) -> &Repo {
+        &self.repo
+    }
+
+    pub fn visibility(&self) -> &Visibility {
+        &self.visibility
+    }
+
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RepositoryDraftBuilder {
+    repo: Repo,
+    visibility: Visibility,
+    description: Option<String>,
+}
+
+impl RepositoryDraftBuilder {
+    pub fn make(repo: Repo) -> Self {
+        Self {
+            repo,
+            visibility: Visibility::Private,
+            description: None,
+        }
+    }
+
+    pub fn visibility(mut self, visibility: Visibility) -> Self {
+        self.visibility = visibility;
+        self
+    }
+
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    pub fn build(self) -> RepositoryDraft {
+        RepositoryDraft {
+            repo: self.repo,
+            visibility: self.visibility,
+            description: self.description,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct RepositoryPatch {
+    repo: Repo,
+    visibility: Option<Visibility>,
+    description: Option<String>,
+}
+
+impl RepositoryPatch {
+    pub fn repo(&self) -> &Repo {
+        &self.repo
+    }
+
+    pub fn visibility(&self) -> Option<&Visibility> {
+        self.visibility.as_ref()
+    }
+
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RepositoryPatchBuilder {
+    repo: Repo,
+    visibility: Option<Visibility>,
+    description: Option<String>,
+}
+
+impl RepositoryPatchBuilder {
+    pub fn make(repo: Repo) -> Self {
+        Self {
+            repo,
+            visibility: None,
+            description: None,
+        }
+    }
+
+    pub fn visibility(mut self, visibility: Visibility) -> Self {
+        self.visibility = Some(visibility);
+        self
+    }
+
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    pub fn build(self) -> RepositoryPatch {
+        RepositoryPatch {
+            repo: self.repo,
+            visibility: self.visibility,
+            description: self.description,
+        }
+    }
+}
+
 impl<LifecycleStateState> RepositoryBuilder<MissingVisibility, LifecycleStateState> {
     pub fn visibility(
         self,

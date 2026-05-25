@@ -99,3 +99,39 @@ native Bitbucket Cloud Issues are being removed in August 2026. The Bitbucket pr
 advertise `Capability::Issues` and does not implement `ManagedIssueProvider`. Jira-backed work
 tracking should be modeled as a separate extension instead of leaking Jira behavior into the
 provider-neutral issue contract.
+
+## Mutations
+
+Use `IssueDraft` to create issues and `IssuePatch` to update or close them:
+
+```rust
+let repo = github()
+    .repo()
+    .owner("akira-io")
+    .name("vcs-providers-rs")
+    .build();
+
+let draft = issue()
+    .draft()
+    .repo(repo.clone())
+    .title("Fix pagination")
+    .body("The cursor should be opaque.")
+    .build();
+
+let create_request = github().issue().collection().create(&draft);
+
+let issue = github().issue().repo(repo).id("42").build();
+let patch = IssuePatchBuilder::make(issue.issue().clone())
+    .closed()
+    .build();
+
+let update_request = issue.update(&patch);
+```
+
+Provider support:
+
+| Provider | Create | Update | Delete |
+| --- | --- | --- | --- |
+| GitHub | supported | supported | close-only through update |
+| GitLab | supported | supported | supported |
+| Bitbucket | unsupported | unsupported | unsupported |

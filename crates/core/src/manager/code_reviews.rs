@@ -1,7 +1,7 @@
 use crate::{
-    CodeReview, CodeReviewBuilder, CodeReviewListQuery, CodeReviewQueryBuilder,
-    MissingCodeReviewId, MissingCodeReviewRepo, PageRequest, PageRequestBuilder,
-    ProvidedCodeReviewId, ProvidedCodeReviewRepo, Repo, RequestUrl,
+    CodeReview, CodeReviewBuilder, CodeReviewDraft, CodeReviewListQuery, CodeReviewPatch,
+    CodeReviewQueryBuilder, MissingCodeReviewId, MissingCodeReviewRepo, PageRequest,
+    PageRequestBuilder, ProvidedCodeReviewId, ProvidedCodeReviewRepo, Repo, Request, RequestUrl,
 };
 
 use super::{ManagedCodeReviewProvider, VcsManager};
@@ -91,6 +91,16 @@ where
     pub fn repo(&self) -> &Repo {
         self.code_review.repo()
     }
+
+    pub fn update(&self, patch: &CodeReviewPatch) -> Request {
+        self.manager.driver.code_review_update_request(patch)
+    }
+
+    pub fn delete(&self) -> Request {
+        self.manager
+            .driver
+            .code_review_delete_request(&self.code_review)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -104,6 +114,10 @@ where
 {
     pub fn list(&self, query: &CodeReviewListQuery) -> RequestUrl {
         self.manager.driver.code_review_list_url(query)
+    }
+
+    pub fn create(&self, draft: &CodeReviewDraft) -> Request {
+        self.manager.driver.code_review_create_request(draft)
     }
 }
 

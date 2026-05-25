@@ -1,3 +1,6 @@
+use vcs_provider_core::{
+    RepositoryDraftBuilder, RepositoryPatchBuilder, RequestMethod, Visibility,
+};
 use vcs_provider_github::github;
 
 #[test]
@@ -44,4 +47,28 @@ fn github_repo_urls_target_collection_endpoints() {
         collection.search(&search_query).value(),
         "https://api.github.com/search/repositories?q=vcs%20provider&per_page=25"
     );
+}
+
+#[test]
+fn github_repo_requests_build_mutation_requests() {
+    let repo = github()
+        .repo()
+        .owner("akira-io")
+        .name("vcs-providers-rs")
+        .build();
+    let draft = RepositoryDraftBuilder::make(repo.clone().into())
+        .visibility(Visibility::Private)
+        .build();
+    let patch = RepositoryPatchBuilder::make(repo.clone().into())
+        .visibility(Visibility::Public)
+        .build();
+    let create_request = github().repo().collection().create(&draft);
+    let update_request = repo.update(&patch);
+    let delete_request = repo.delete();
+
+    assert_eq!(create_request.method(), &RequestMethod::Post);
+    assert!(create_request.body().is_some());
+    assert_eq!(update_request.method(), &RequestMethod::Patch);
+    assert!(update_request.body().is_some());
+    assert_eq!(delete_request.method(), &RequestMethod::Delete);
 }

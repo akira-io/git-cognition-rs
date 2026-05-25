@@ -34,6 +34,34 @@ let repo = vcs(gitlab())
 
 The core crate only provides neutral primitives: `Repo`, pagination requests, request URLs, and transport requests.
 
+## Mutations
+
+Use `RepositoryDraft` to create repositories and `RepositoryPatch` to update repository settings:
+
+```rust
+let repo = github()
+    .repo()
+    .owner("akira-io")
+    .name("vcs-providers-rs")
+    .build();
+
+let draft = RepositoryDraftBuilder::make(repo.clone().into())
+    .visibility(Visibility::Private)
+    .description("Universal VCS provider abstraction")
+    .build();
+
+let create_request = github().repo().collection().create(&draft);
+let delete_request = repo.delete();
+```
+
+Provider support:
+
+| Provider | Create | Update | Delete |
+| --- | --- | --- | --- |
+| GitHub | supported | supported | supported |
+| GitLab | supported | supported | supported |
+| Bitbucket | supported | supported | supported |
+
 ## URL Access
 
 Provider repository URL methods return `RequestUrl`, not `String`. Use `value()` for the full URL and component accessors when routing, telemetry, or assertions need structured parts:

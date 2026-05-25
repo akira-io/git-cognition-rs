@@ -1,6 +1,7 @@
 use crate::{
-    Issue, IssueBuilder, IssueListQuery, IssueQueryBuilder, MissingIssueId, MissingIssueRepo,
-    PageRequest, PageRequestBuilder, ProvidedIssueId, ProvidedIssueRepo, Repo, RequestUrl,
+    Issue, IssueBuilder, IssueDraft, IssueListQuery, IssuePatch, IssueQueryBuilder, MissingIssueId,
+    MissingIssueRepo, PageRequest, PageRequestBuilder, ProvidedIssueId, ProvidedIssueRepo, Repo,
+    Request, RequestUrl,
 };
 
 use super::{ManagedIssueProvider, VcsManager};
@@ -89,6 +90,14 @@ where
     pub fn repo(&self) -> &Repo {
         self.issue.repo()
     }
+
+    pub fn update(&self, patch: &IssuePatch) -> Request {
+        self.manager.driver.issue_update_request(patch)
+    }
+
+    pub fn delete(&self) -> Request {
+        self.manager.driver.issue_delete_request(&self.issue)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -102,6 +111,10 @@ where
 {
     pub fn list(&self, query: &IssueListQuery) -> RequestUrl {
         self.manager.driver.issue_list_url(query)
+    }
+
+    pub fn create(&self, draft: &IssueDraft) -> Request {
+        self.manager.driver.issue_create_request(draft)
     }
 }
 

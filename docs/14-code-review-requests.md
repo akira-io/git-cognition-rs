@@ -99,3 +99,41 @@ Bitbucket maps code reviews to pull requests:
 ```
 
 Pagination remains provider-neutral in the caller. Providers map it to their own query names.
+
+## Mutations
+
+Use `CodeReviewDraft` to create code reviews and `CodeReviewPatch` to update or close them:
+
+```rust
+let repo = gitlab()
+    .repo()
+    .owner("akira-io")
+    .name("vcs-providers-rs")
+    .build();
+
+let draft = code_review()
+    .draft()
+    .repo(repo.clone())
+    .title("Add release mutations")
+    .source("feature/releases")
+    .target("main")
+    .body("Adds release request builders.")
+    .build();
+
+let create_request = gitlab().code_review().collection().create(&draft);
+
+let code_review = gitlab().code_review().repo(repo).id("42").build();
+let patch = CodeReviewPatchBuilder::make(code_review.code_review().clone())
+    .closed()
+    .build();
+
+let update_request = code_review.update(&patch);
+```
+
+Provider support:
+
+| Provider | Create | Update | Delete |
+| --- | --- | --- | --- |
+| GitHub | supported | supported | close-only through update |
+| GitLab | supported | supported | supported |
+| Bitbucket | supported | supported | decline through delete request |

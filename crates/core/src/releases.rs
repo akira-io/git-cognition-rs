@@ -21,6 +21,48 @@ pub struct Release {
     id: ReleaseId,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ReleaseDraft {
+    repo: Repo,
+    tag: String,
+    name: Option<String>,
+    body: Option<String>,
+}
+
+impl ReleaseDraft {
+    pub fn repo(&self) -> &Repo {
+        &self.repo
+    }
+
+    pub fn tag(&self) -> &str {
+        &self.tag
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    pub fn body(&self) -> Option<&str> {
+        self.body.as_deref()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReleaseDraftBuilder<RepoState, TagState> {
+    repo: RepoState,
+    tag: TagState,
+    name: Option<String>,
+    body: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MissingReleaseTag;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProvidedReleaseTag {
+    tag: String,
+}
+
 impl Release {
     pub fn builder() -> ReleaseBuilder<MissingReleaseRepo, MissingReleaseId> {
         ReleaseBuilder {
@@ -39,6 +81,62 @@ impl Release {
 
     pub fn id(&self) -> &ReleaseId {
         &self.id
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ReleasePatch {
+    release: Release,
+    name: Option<String>,
+    body: Option<String>,
+}
+
+impl ReleasePatch {
+    pub fn release(&self) -> &Release {
+        &self.release
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    pub fn body(&self) -> Option<&str> {
+        self.body.as_deref()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReleasePatchBuilder {
+    release: Release,
+    name: Option<String>,
+    body: Option<String>,
+}
+
+impl ReleasePatchBuilder {
+    pub fn make(release: Release) -> Self {
+        Self {
+            release,
+            name: None,
+            body: None,
+        }
+    }
+
+    pub fn name(mut self, name: impl Into<String>) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
+    pub fn body(mut self, body: impl Into<String>) -> Self {
+        self.body = Some(body.into());
+        self
+    }
+
+    pub fn build(self) -> ReleasePatch {
+        ReleasePatch {
+            release: self.release,
+            name: self.name,
+            body: self.body,
+        }
     }
 }
 
@@ -65,9 +163,12 @@ pub struct ReleaseBuilder<RepoState, ReleaseIdState> {
 }
 
 impl<ReleaseIdState> ReleaseBuilder<MissingReleaseRepo, ReleaseIdState> {
-    pub fn repo(self, repo: Repo) -> ReleaseBuilder<ProvidedReleaseRepo, ReleaseIdState> {
+    pub fn repo(
+        self,
+        repo: impl Into<Repo>,
+    ) -> ReleaseBuilder<ProvidedReleaseRepo, ReleaseIdState> {
         ReleaseBuilder {
-            repo: ProvidedReleaseRepo { repo },
+            repo: ProvidedReleaseRepo { repo: repo.into() },
             id: self.id,
         }
     }
@@ -96,6 +197,60 @@ impl ReleaseBuilder<ProvidedReleaseRepo, ProvidedReleaseId> {
 impl ReleaseBuilder<MissingReleaseRepo, MissingReleaseId> {
     pub fn query(self) -> ReleaseQueryBuilder {
         ReleaseQueryBuilder
+    }
+
+    pub fn draft(self) -> ReleaseDraftBuilder<MissingReleaseRepo, MissingReleaseTag> {
+        ReleaseDraftBuilder {
+            repo: MissingReleaseRepo,
+            tag: MissingReleaseTag,
+            name: None,
+            body: None,
+        }
+    }
+}
+
+impl<TagState> ReleaseDraftBuilder<MissingReleaseRepo, TagState> {
+    pub fn repo(self, repo: impl Into<Repo>) -> ReleaseDraftBuilder<ProvidedReleaseRepo, TagState> {
+        ReleaseDraftBuilder {
+            repo: ProvidedReleaseRepo { repo: repo.into() },
+            tag: self.tag,
+            name: self.name,
+            body: self.body,
+        }
+    }
+}
+
+impl<RepoState> ReleaseDraftBuilder<RepoState, MissingReleaseTag> {
+    pub fn tag(self, tag: impl Into<String>) -> ReleaseDraftBuilder<RepoState, ProvidedReleaseTag> {
+        ReleaseDraftBuilder {
+            repo: self.repo,
+            tag: ProvidedReleaseTag { tag: tag.into() },
+            name: self.name,
+            body: self.body,
+        }
+    }
+}
+
+impl<RepoState, TagState> ReleaseDraftBuilder<RepoState, TagState> {
+    pub fn name(mut self, name: impl Into<String>) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
+    pub fn body(mut self, body: impl Into<String>) -> Self {
+        self.body = Some(body.into());
+        self
+    }
+}
+
+impl ReleaseDraftBuilder<ProvidedReleaseRepo, ProvidedReleaseTag> {
+    pub fn build(self) -> ReleaseDraft {
+        ReleaseDraft {
+            repo: self.repo.repo,
+            tag: self.tag.tag,
+            name: self.name,
+            body: self.body,
+        }
     }
 }
 

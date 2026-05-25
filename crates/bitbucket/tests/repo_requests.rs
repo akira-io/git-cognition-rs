@@ -1,4 +1,7 @@
 use vcs_provider_bitbucket::bitbucket;
+use vcs_provider_core::{
+    RepositoryDraftBuilder, RepositoryPatchBuilder, RequestMethod, Visibility,
+};
 
 #[test]
 fn bitbucket_repo_urls_target_repository_endpoints() {
@@ -44,4 +47,28 @@ fn bitbucket_repo_urls_target_collection_endpoints() {
         collection.search(&search_query).value(),
         "https://api.bitbucket.org/2.0/repositories?q=name~%22vcs%20provider%22&pagelen=25"
     );
+}
+
+#[test]
+fn bitbucket_repo_requests_build_mutation_requests() {
+    let repo = bitbucket()
+        .repo()
+        .owner("akira-io")
+        .name("vcs-providers-rs")
+        .build();
+    let draft = RepositoryDraftBuilder::make(repo.clone().into())
+        .visibility(Visibility::Private)
+        .build();
+    let patch = RepositoryPatchBuilder::make(repo.clone().into())
+        .visibility(Visibility::Public)
+        .build();
+    let create_request = repo.create(&draft);
+    let update_request = repo.update(&patch);
+    let delete_request = repo.delete();
+
+    assert_eq!(create_request.method(), &RequestMethod::Put);
+    assert!(create_request.body().is_some());
+    assert_eq!(update_request.method(), &RequestMethod::Put);
+    assert!(update_request.body().is_some());
+    assert_eq!(delete_request.method(), &RequestMethod::Delete);
 }

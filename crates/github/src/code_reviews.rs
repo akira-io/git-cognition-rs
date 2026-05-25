@@ -1,5 +1,6 @@
 use vcs_provider_core::{
-    CodeReview, CodeReviewListQuery, PageRequest, RequestUrl, RequestUrlBuilder, url,
+    CodeReview, CodeReviewDraft, CodeReviewListQuery, CodeReviewPatch, PageRequest, Request,
+    RequestBody, RequestUrl, RequestUrlBuilder, request, url,
 };
 
 use crate::DEFAULT_BASE_URL;
@@ -29,6 +30,20 @@ impl GitHubCodeReview {
             ])
             .build()
     }
+
+    pub fn update(&self, patch: &CodeReviewPatch) -> Request {
+        request()
+            .patch(self.url().value())
+            .body(code_review_patch_body(patch))
+            .build()
+    }
+
+    pub fn delete(&self) -> Request {
+        request()
+            .patch(self.url().value())
+            .body(RequestBody::make("{\"state\":\"closed\"}"))
+            .build()
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -55,6 +70,23 @@ impl GitHubCodeReviewCollection {
         )
         .build()
     }
+
+    pub fn create(&self, draft: &CodeReviewDraft) -> Request {
+        request()
+            .post(
+                url(&self.base_url)
+                    .path_segments([
+                        "repos",
+                        draft.repo().owner().as_str(),
+                        draft.repo().name().as_str(),
+                        "pulls",
+                    ])
+                    .build()
+                    .value(),
+            )
+            .body(code_review_draft_body(draft))
+            .build()
+    }
 }
 
 impl Default for GitHubCodeReviewCollection {
@@ -75,5 +107,17 @@ fn apply_page(request_url: RequestUrlBuilder, page: Option<&PageRequest>) -> Req
                 page.cursor().map(|cursor| cursor.as_str().to_owned()),
             ),
         None => request_url,
+    }
+}
+
+fn code_review_draft_body(draft: &CodeReviewDraft) -> RequestBody {
+    RequestBody::make(format!("{{\"title\":\"{}\"}}", draft.title()))
+}
+
+fn code_review_patch_body(patch: &CodeReviewPatch) -> RequestBody {
+    match patch.closed() {
+        Some(true) => RequestBody::make("{\"state\":\"closed\"}"),
+        Some(false) => RequestBody::make("{\"state\":\"open\"}"),
+        None => RequestBody::make("{}"),
     }
 }
