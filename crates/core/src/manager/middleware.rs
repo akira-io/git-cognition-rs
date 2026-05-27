@@ -1,8 +1,9 @@
 use crate::{
     AuthCredential, CodeReviews, HeaderMiddleware, Issues, ManagedClientProvider, Middleware,
     Pipelines, Provider, ProviderClient, RateLimitHeaderProfileBuilder, RateLimitRecorder,
-    RateLimitTransport, Releases, Repos, Request, Response, RetryPolicy, RetryTransport, Transport,
-    TransportPipelineBuilder, VcsManager, VcsResult, middleware,
+    RateLimitTransport, Releases, Repos, Request, Response, RetryPolicy, RetryTransport,
+    TelemetryRecorder, TelemetryTransport, Transport, TransportPipelineBuilder, VcsManager,
+    VcsResult, middleware,
 };
 use std::sync::Arc;
 
@@ -16,6 +17,7 @@ pub struct ManagedMiddlewareTransportBuilder<Driver, TransportState> {
     rate_limit_enabled: bool,
     rate_limit_headers: RateLimitHeaderProfileBuilder,
     rate_limit_recorder: RateLimitRecorder,
+    telemetry_recorder: Option<TelemetryRecorder>,
 }
 
 impl<Driver> ManagedMiddlewareTransportBuilder<Driver, crate::ProvidedTransport> {
@@ -29,6 +31,7 @@ impl<Driver> ManagedMiddlewareTransportBuilder<Driver, crate::ProvidedTransport>
             rate_limit_enabled: false,
             rate_limit_headers: RateLimitHeaderProfileBuilder::default(),
             rate_limit_recorder: RateLimitRecorder::default(),
+            telemetry_recorder: None,
         }
     }
 }
@@ -92,6 +95,11 @@ impl<Driver, TransportState> ManagedMiddlewareTransportBuilder<Driver, Transport
         self.rate_limit_recorder = recorder;
         self
     }
+
+    pub fn telemetry(mut self, recorder: TelemetryRecorder) -> Self {
+        self.telemetry_recorder = Some(recorder);
+        self
+    }
 }
 
 impl<Driver> ManagedMiddlewareTransportBuilder<Driver, crate::ProvidedTransport>
@@ -147,6 +155,13 @@ where
             transport = Arc::new(RetryTransport::make(
                 SharedTransport::make(&transport),
                 RetryPolicy::make(self.retry_attempts, self.retry_status_codes),
+            ));
+        }
+
+        if let Some(telemetry_recorder) = self.telemetry_recorder {
+            transport = Arc::new(TelemetryTransport::make(
+                SharedTransport::make(&transport),
+                telemetry_recorder,
             ));
         }
 

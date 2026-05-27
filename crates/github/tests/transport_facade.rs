@@ -1,5 +1,6 @@
 use vcs_provider_core::{
-    ResponseSequenceTransport, auth, rate_limit, repo, response, run_async_test, vcs,
+    ResponseSequenceTransport, TelemetryEvent, auth, rate_limit, repo, response, run_async_test,
+    telemetry, vcs,
 };
 use vcs_provider_github::github;
 
@@ -7,6 +8,7 @@ use vcs_provider_github::github;
 fn github_facade_composes_middleware_retry_and_rate_limit() -> vcs_provider_core::VcsResult<()> {
     run_async_test(async {
         let recorder = rate_limit().recorder();
+        let telemetry_recorder = telemetry().recorder();
         let provider_transport = ResponseSequenceTransport::make([
             response()
                 .status(429)
@@ -26,12 +28,14 @@ fn github_facade_composes_middleware_retry_and_rate_limit() -> vcs_provider_core
             .rate_limit()
             .remaining(["x-ratelimit-remaining"])
             .recorder(recorder.clone())
+            .telemetry(telemetry_recorder.clone())
             .auth(auth().personal_access_token("github-token"))
             .repos()
             .get(repo().owner("akira-io").name("vcs-providers-rs").get())
             .await?;
         let requests = provider_transport.requests();
         let observations = recorder.observations();
+        let telemetry_events = telemetry_recorder.events();
 
         assert_eq!(repository.repo().owner().as_str(), "akira-io");
         assert_eq!(requests.len(), 2);
@@ -43,6 +47,15 @@ fn github_facade_composes_middleware_retry_and_rate_limit() -> vcs_provider_core
             observations[1].remaining().map(|quota| quota.as_u64()),
             Some(42)
         );
+        assert_eq!(telemetry_events.len(), 2);
+        assert!(matches!(
+            telemetry_events.first(),
+            Some(TelemetryEvent::RequestStarted(_))
+        ));
+        assert!(matches!(
+            telemetry_events.get(1),
+            Some(TelemetryEvent::RequestFinished(event)) if event.status_code() == 200
+        ));
 
         Ok(())
     })
