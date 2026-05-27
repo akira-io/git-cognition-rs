@@ -28,6 +28,8 @@ Bitbucket app passwords require username plus password credentials and are being
 Middleware remains transport-level and provider-neutral:
 
 ```rust
+let telemetry_recorder = telemetry().recorder();
+
 let repository = vcs(github())
     .middleware(http().transport().get()?)
     .header("x-request-id", "request-1")
@@ -38,6 +40,7 @@ let repository = vcs(github())
     .remaining(["x-ratelimit-remaining"])
     .reset_at(["x-ratelimit-reset"])
     .retry_after(["retry-after"])
+    .telemetry(telemetry_recorder.clone())
     .auth(auth().personal_access_token("token"))
     .repos()
     .get(repo().owner("akira-io").name("vcs-providers-rs").get())
@@ -75,7 +78,7 @@ let repository = vcs(gitlab())
 The request path is:
 
 ```text
-Provider client -> provider headers -> auth header -> retry -> rate-limit observation -> middleware -> HttpTransport -> typed Response -> mapper
+Provider client -> provider headers -> auth header -> telemetry -> retry -> rate-limit observation -> middleware -> HttpTransport -> typed Response -> mapper
 ```
 
 Retry decisions use response status codes only. Rate-limit observation reads configured response headers without provider-specific logic in core.

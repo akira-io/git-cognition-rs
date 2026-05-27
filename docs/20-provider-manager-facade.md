@@ -116,6 +116,8 @@ let repository = vcs(github())
 Middleware can be configured from the same provider facade:
 
 ```rust
+let telemetry_recorder = telemetry().recorder();
+
 let repository = vcs(github())
     .middleware(http().transport().get()?)
     .header("x-request-id", "request-1")
@@ -124,6 +126,7 @@ let repository = vcs(github())
     .on_status(429)
     .rate_limit()
     .remaining(["x-ratelimit-remaining"])
+    .telemetry(telemetry_recorder.clone())
     .auth(auth().personal_access_token("token"))
     .repos()
     .get(repo().owner("akira-io").name("vcs-providers-rs").get())
