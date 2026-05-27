@@ -54,6 +54,7 @@ pub use issues::{
     IssuePatchBuilder, IssueQueryBuilder, IssueResponseMapper, Issues, IssuesFluent,
     MissingIssueId, MissingIssueRepo, MissingIssueTitle, ProvidedIssueId, ProvidedIssueRepo,
     ProvidedIssueTitle, ScopedIssueOperation, TransportBackedIssues, TransportNotConfiguredIssues,
+    UnsupportedIssues,
 };
 pub use manager::{
     ManagedClientProvider, ManagedCodeReview, ManagedCodeReviewBuilder,
@@ -94,7 +95,7 @@ pub use releases::{
     ReleaseDraftBuilder, ReleaseId, ReleaseListOperation, ReleaseListPaginationOperation,
     ReleaseListQuery, ReleasePatch, ReleasePatchBuilder, ReleaseQueryBuilder,
     ReleaseResponseMapper, Releases, ReleasesFluent, ScopedReleaseOperation,
-    TransportBackedReleases, TransportNotConfiguredReleases,
+    TransportBackedReleases, TransportNotConfiguredReleases, UnsupportedReleases,
 };
 pub use repos::{
     BoxFuture, Branch, Commit, LifecycleState, MissingLifecycleState, MissingOwnerName,

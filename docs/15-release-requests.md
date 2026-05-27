@@ -77,6 +77,10 @@ GitLab releases are addressed by tag name through the project releases endpoint:
 
 Bitbucket Cloud is intentionally not exposed through this facade. Bitbucket Cloud has repository downloads, but downloads are not equivalent to provider-neutral releases. A Bitbucket downloads extension can model that behavior without weakening the release contract.
 
+When a provider does not advertise `Capability::Releases`, release operations must return
+`VcsError::UnsupportedOperation`. They must not return `TransportNotConfigured`, because that
+would imply the provider supports releases and only lacks an HTTP client.
+
 Pagination remains provider-neutral in the caller. Providers map it to their own query names.
 
 ## Create, Update, Delete

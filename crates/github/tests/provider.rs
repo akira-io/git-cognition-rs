@@ -1,6 +1,6 @@
 use vcs_provider_core::{
-    AuthHeaderStyle, AuthKind, Capability, HeaderMiddleware, Provider, RecordingTransport,
-    VcsError, VcsResult, Visibility, auth, middleware, provider, repo, response, run_async_test,
+    AuthHeaderStyle, AuthKind, Capability, HeaderMiddleware, Provider, VcsError, VcsResult,
+    Visibility, auth, middleware, provider, provider_response, repo, run_async_test,
 };
 use vcs_provider_github::{DISPLAY_NAME, PROVIDER_ID, github};
 
@@ -48,13 +48,11 @@ fn github_provider_maps_personal_access_token_header() {
 
 #[test]
 fn github_client_routes_auth_and_middleware_through_transport() -> VcsResult<()> {
-    let transport = RecordingTransport::make(
-        response()
-            .body(
-                r#"{"full_name":"akira-io/vcs-providers-rs","private":false,"archived":false,"disabled":false}"#,
-            )
-            .build(),
-    );
+    let transport = provider_response()
+        .body(
+            r#"{"full_name":"akira-io/vcs-providers-rs","private":false,"archived":false,"disabled":false}"#,
+        )
+        .record();
     let pipeline = middleware()
         .with(HeaderMiddleware::make("x-vcs-trace", "trace-1"))
         .transport(transport.clone())

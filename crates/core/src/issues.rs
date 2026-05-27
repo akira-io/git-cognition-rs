@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{BoxFuture, Page, Repo, VcsResult, transport_not_configured};
+use crate::{BoxFuture, Page, Repo, VcsError, VcsResult, transport_not_configured};
 
 #[path = "issues/drafts.rs"]
 mod drafts;
@@ -227,4 +227,37 @@ impl Issues for TransportNotConfiguredIssues {
     fn delete(&self, _issue: Issue) -> BoxFuture<'_, VcsResult<()>> {
         transport_not_configured()
     }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct UnsupportedIssues;
+
+impl Issues for UnsupportedIssues {
+    fn get(&self, _repo: Repo, _id: IssueId) -> BoxFuture<'_, VcsResult<Issue>> {
+        unsupported_issue_operation("issue get")
+    }
+
+    fn list(&self, _query: IssueListQuery) -> BoxFuture<'_, VcsResult<Page<Issue>>> {
+        unsupported_issue_operation("issue list")
+    }
+
+    fn create(&self, _draft: IssueDraft) -> BoxFuture<'_, VcsResult<Issue>> {
+        unsupported_issue_operation("issue create")
+    }
+
+    fn update(&self, _patch: IssuePatch) -> BoxFuture<'_, VcsResult<Issue>> {
+        unsupported_issue_operation("issue update")
+    }
+
+    fn close(&self, _patch: IssuePatch) -> BoxFuture<'_, VcsResult<Issue>> {
+        unsupported_issue_operation("issue close")
+    }
+
+    fn delete(&self, _issue: Issue) -> BoxFuture<'_, VcsResult<()>> {
+        unsupported_issue_operation("issue delete")
+    }
+}
+
+fn unsupported_issue_operation<'a, T>(operation: &'static str) -> BoxFuture<'a, VcsResult<T>> {
+    Box::pin(async move { Err(VcsError::UnsupportedOperation(operation.into())) })
 }

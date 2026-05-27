@@ -100,6 +100,10 @@ advertise `Capability::Issues` and does not implement `ManagedIssueProvider`. Ji
 tracking should be modeled as a separate extension instead of leaking Jira behavior into the
 provider-neutral issue contract.
 
+When a provider does not advertise `Capability::Issues`, issue operations must return
+`VcsError::UnsupportedOperation`. They must not return `TransportNotConfigured`, because that
+would imply the provider supports issues and only lacks an HTTP client.
+
 ## Create, Update, Close, Delete
 
 Create, update, close and delete requests should stay fluent at the call site:

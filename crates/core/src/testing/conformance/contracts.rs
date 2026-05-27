@@ -1,6 +1,14 @@
 use crate::{
-    CodeReview, CodeReviewId, Issue, IssueId, Pipeline, PipelineId, Provider, Release, ReleaseId,
-    Repo, VcsError, VcsResult, Visibility, code_review, error, issue, pipeline, release, repo,
+    Capability, CodeReviewId, IssueId, PipelineId, Provider, ReleaseId, VcsResult, Visibility,
+    code_review, issue, pipeline, release, repo,
+};
+
+#[path = "contracts/support.rs"]
+mod support;
+
+use support::{
+    assert_capability_contract_error, assert_transport_not_configured, provider_supports,
+    sample_code_review, sample_issue, sample_pipeline, sample_release, sample_repo_location,
 };
 
 pub fn check_provider_contracts(provider: &impl Provider) -> VcsResult<()> {
@@ -77,18 +85,21 @@ fn check_issues(provider: &impl Provider) -> VcsResult<()> {
     let repo_location = sample_repo_location();
     let issue_resource = sample_issue(repo_location.clone());
     let issues = provider.issues();
+    let supported = provider_supports(provider, Capability::Issues);
 
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "issue get",
         futures::executor::block_on(issues.get(repo_location.clone(), IssueId::make("42"))),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "issue list",
         futures::executor::block_on(
             issues.list(issue().query().location(repo_location.clone()).list()),
         ),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "issue create",
         futures::executor::block_on(
             issues.create(
@@ -99,8 +110,9 @@ fn check_issues(provider: &impl Provider) -> VcsResult<()> {
                     .get(),
             ),
         ),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "issue update",
         futures::executor::block_on(
             issues.update(
@@ -109,8 +121,9 @@ fn check_issues(provider: &impl Provider) -> VcsResult<()> {
                     .get(),
             ),
         ),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "issue close",
         futures::executor::block_on(
             issues.close(
@@ -119,10 +132,12 @@ fn check_issues(provider: &impl Provider) -> VcsResult<()> {
                     .get(),
             ),
         ),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "issue delete",
         futures::executor::block_on(issues.delete(sample_issue(sample_repo_location()))),
+        supported,
     )
 }
 
@@ -208,24 +223,28 @@ fn check_releases(provider: &impl Provider) -> VcsResult<()> {
     let repo_location = sample_repo_location();
     let release_resource = sample_release(repo_location.clone());
     let releases = provider.releases();
+    let supported = provider_supports(provider, Capability::Releases);
 
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "release get",
         futures::executor::block_on(releases.get(repo_location.clone(), ReleaseId::make("v1.0.0"))),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "release list",
         futures::executor::block_on(
             releases.list(release().query().location(repo_location.clone()).list()),
         ),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "release create",
         futures::executor::block_on(
             releases.create(release().draft().repo(repo_location).tag("v1.0.0").get()),
         ),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "release update",
         futures::executor::block_on(
             releases.update(
@@ -234,39 +253,11 @@ fn check_releases(provider: &impl Provider) -> VcsResult<()> {
                     .get(),
             ),
         ),
+        supported,
     )?;
-    assert_transport_not_configured(
+    assert_capability_contract_error(
         "release delete",
         futures::executor::block_on(releases.delete(release_resource)),
+        supported,
     )
-}
-
-fn sample_repo_location() -> Repo {
-    repo().owner("akira-io").name("vcs-providers-rs").get()
-}
-
-fn sample_issue(repo_location: Repo) -> Issue {
-    issue().repo(repo_location).id("42").get()
-}
-
-fn sample_code_review(repo_location: Repo) -> CodeReview {
-    code_review().repo(repo_location).id("42").get()
-}
-
-fn sample_pipeline(repo_location: Repo) -> Pipeline {
-    pipeline().repo(repo_location).id("42").get()
-}
-
-fn sample_release(repo_location: Repo) -> Release {
-    release().repo(repo_location).id("v1.0.0").get()
-}
-
-fn assert_transport_not_configured<T>(operation: &str, result: VcsResult<T>) -> VcsResult<()> {
-    match result {
-        Err(VcsError::TransportNotConfigured) => Ok(()),
-        Err(_) => Err(error().invalid_input(format!("{operation} returned wrong error"))),
-        Ok(_) => Err(error().invalid_input(format!(
-            "{operation} succeeded without configured transport"
-        ))),
-    }
 }

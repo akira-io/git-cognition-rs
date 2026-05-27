@@ -3,8 +3,8 @@ use std::sync::Arc;
 use vcs_provider_core::{
     AuthCredential, CodeReviews, Issues, ManagedClientProvider, Pipelines, Provider,
     ProviderClient, ProviderDescriptor, Releases, Repos, RequestHeader, Transport,
-    TransportBackedCodeReviews, TransportBackedPipelines, TransportBackedRepos,
-    TransportNotConfiguredIssues, TransportNotConfiguredReleases,
+    TransportBackedCodeReviews, TransportBackedPipelines, TransportBackedRepos, UnsupportedIssues,
+    UnsupportedReleases,
 };
 
 use crate::mappers::{
@@ -90,7 +90,7 @@ impl Provider for BitbucketClient {
     }
 
     fn issues(&self) -> Box<dyn Issues> {
-        Box::<TransportNotConfiguredIssues>::default()
+        Box::<UnsupportedIssues>::default()
     }
 
     fn code_reviews(&self) -> Box<dyn CodeReviews> {
@@ -102,7 +102,7 @@ impl Provider for BitbucketClient {
     }
 
     fn releases(&self) -> Box<dyn Releases> {
-        Box::<TransportNotConfiguredReleases>::default()
+        Box::<UnsupportedReleases>::default()
     }
 
     fn default_base_url(&self) -> &str {

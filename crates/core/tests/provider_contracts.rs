@@ -2,7 +2,8 @@ use vcs_provider_core::{
     CodeReviews, CodeReviewsFluent, IssueId, Issues, IssuesFluent, Pipelines, ReleaseId, Releases,
     ReleasesFluent, Repos, TransportNotConfiguredCodeReviews, TransportNotConfiguredIssues,
     TransportNotConfiguredPipelines, TransportNotConfiguredReleases, TransportNotConfiguredRepos,
-    VcsError, VcsResult, Visibility, code_review, issue, pipeline, release, repo,
+    UnsupportedIssues, UnsupportedReleases, VcsError, VcsResult, Visibility, code_review, issue,
+    pipeline, release, repo,
 };
 
 #[test]
@@ -51,6 +52,36 @@ fn issue_contract_reports_unconfigured_transport() -> VcsResult<()> {
     assert_eq!(result, Err(VcsError::TransportNotConfigured));
     assert_eq!(list_result, Err(VcsError::TransportNotConfigured));
     assert_eq!(delete_result, Err(VcsError::TransportNotConfigured));
+
+    Ok(())
+}
+
+#[test]
+fn unsupported_issue_contract_reports_unsupported_operation() -> VcsResult<()> {
+    let repo = repo().owner("akira-io").name("vcs-providers-rs").get();
+    let issue_resource = issue().repo(repo.clone()).id("1").get();
+    let get_result =
+        futures::executor::block_on(UnsupportedIssues.get(repo.clone(), IssueId::make("1")));
+    let list_result = futures::executor::block_on(
+        (Box::new(UnsupportedIssues) as Box<dyn Issues>)
+            .list()
+            .location(repo)
+            .list(),
+    );
+    let delete_result = futures::executor::block_on(UnsupportedIssues.delete(issue_resource));
+
+    assert!(matches!(
+        get_result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "issue get"
+    ));
+    assert!(matches!(
+        list_result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "issue list"
+    ));
+    assert!(matches!(
+        delete_result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "issue delete"
+    ));
 
     Ok(())
 }
@@ -121,6 +152,36 @@ fn release_contract_reports_unconfigured_transport() -> VcsResult<()> {
     assert_eq!(release_resource.id().as_str(), "1");
     assert_eq!(result, Err(VcsError::TransportNotConfigured));
     assert_eq!(list_result, Err(VcsError::TransportNotConfigured));
+
+    Ok(())
+}
+
+#[test]
+fn unsupported_release_contract_reports_unsupported_operation() -> VcsResult<()> {
+    let repo = repo().owner("akira-io").name("vcs-providers-rs").get();
+    let release_resource = release().repo(repo.clone()).id("1").get();
+    let get_result =
+        futures::executor::block_on(UnsupportedReleases.get(repo.clone(), ReleaseId::make("1")));
+    let list_result = futures::executor::block_on(
+        (Box::new(UnsupportedReleases) as Box<dyn Releases>)
+            .list()
+            .location(repo)
+            .list(),
+    );
+    let delete_result = futures::executor::block_on(UnsupportedReleases.delete(release_resource));
+
+    assert!(matches!(
+        get_result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "release get"
+    ));
+    assert!(matches!(
+        list_result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "release list"
+    ));
+    assert!(matches!(
+        delete_result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "release delete"
+    ));
 
     Ok(())
 }
