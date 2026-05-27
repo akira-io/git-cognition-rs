@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{BoxFuture, Page, Repo, VcsResult, transport_not_configured};
+use crate::{BoxFuture, Page, Repo, VcsError, VcsResult, transport_not_configured};
 
 #[path = "releases/drafts.rs"]
 mod drafts;
@@ -224,4 +224,33 @@ impl Releases for TransportNotConfiguredReleases {
     fn delete(&self, _release: Release) -> BoxFuture<'_, VcsResult<()>> {
         transport_not_configured()
     }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct UnsupportedReleases;
+
+impl Releases for UnsupportedReleases {
+    fn get(&self, _repo: Repo, _id: ReleaseId) -> BoxFuture<'_, VcsResult<Release>> {
+        unsupported_release_operation("release get")
+    }
+
+    fn list(&self, _query: ReleaseListQuery) -> BoxFuture<'_, VcsResult<Page<Release>>> {
+        unsupported_release_operation("release list")
+    }
+
+    fn create(&self, _draft: ReleaseDraft) -> BoxFuture<'_, VcsResult<Release>> {
+        unsupported_release_operation("release create")
+    }
+
+    fn update(&self, _patch: ReleasePatch) -> BoxFuture<'_, VcsResult<Release>> {
+        unsupported_release_operation("release update")
+    }
+
+    fn delete(&self, _release: Release) -> BoxFuture<'_, VcsResult<()>> {
+        unsupported_release_operation("release delete")
+    }
+}
+
+fn unsupported_release_operation<'a, T>(operation: &'static str) -> BoxFuture<'a, VcsResult<T>> {
+    Box::pin(async move { Err(VcsError::UnsupportedOperation(operation.into())) })
 }

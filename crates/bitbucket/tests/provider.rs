@@ -1,8 +1,8 @@
 use vcs_provider_bitbucket::{DISPLAY_NAME, PROVIDER_ID, bitbucket};
 use vcs_provider_core::{
-    AuthHeaderStyle, AuthKind, Capability, HeaderMiddleware, Provider, ProviderId,
-    RecordingTransport, VcsError, VcsResult, Visibility, auth, middleware, provider, repo,
-    response, run_async_test,
+    AuthHeaderStyle, AuthKind, Capability, HeaderMiddleware, IssuesFluent, Provider, ProviderId,
+    ReleasesFluent, VcsError, VcsResult, Visibility, auth, middleware, provider, provider_response,
+    repo, run_async_test,
 };
 
 #[test]
@@ -60,11 +60,9 @@ fn bitbucket_provider_maps_oauth_header() {
 
 #[test]
 fn bitbucket_client_routes_auth_and_middleware_through_transport() -> VcsResult<()> {
-    let transport = RecordingTransport::make(
-        response()
-            .body(r#"{"full_name":"akira-io/vcs-providers-rs","is_private":true}"#)
-            .build(),
-    );
+    let transport = provider_response()
+        .body(r#"{"full_name":"akira-io/vcs-providers-rs","is_private":true}"#)
+        .record();
     let pipeline = middleware()
         .with(HeaderMiddleware::make("x-vcs-trace", "trace-1"))
         .transport(transport.clone())
@@ -110,6 +108,45 @@ fn bitbucket_client_routes_auth_and_middleware_through_transport() -> VcsResult<
 
         Ok(())
     })
+}
+
+#[test]
+fn bitbucket_issues_report_unsupported_operation() {
+    let repo = repo().owner("akira-io").name("vcs-providers-rs").get();
+    let result = run_async_test(async {
+        bitbucket()
+            .issues()
+            .update()
+            .location(repo)
+            .id("42")
+            .title("Unsupported")
+            .update()
+            .await
+    });
+
+    assert!(matches!(
+        result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "issue update"
+    ));
+}
+
+#[test]
+fn bitbucket_releases_report_unsupported_operation() {
+    let repo = repo().owner("akira-io").name("vcs-providers-rs").get();
+    let result = run_async_test(async {
+        bitbucket()
+            .releases()
+            .delete()
+            .location(repo)
+            .id("v1.0.0")
+            .delete()
+            .await
+    });
+
+    assert!(matches!(
+        result,
+        Err(VcsError::UnsupportedOperation(operation)) if operation == "release delete"
+    ));
 }
 
 #[test]

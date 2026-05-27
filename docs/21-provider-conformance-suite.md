@@ -20,6 +20,8 @@ The suite validates:
 - Supported and unsupported capabilities.
 - Auth header style expectations.
 - Object-safe access to universal contracts.
+- Supported universal contracts fail with `TransportNotConfigured` when no client is attached.
+- Unsupported universal contracts fail with `UnsupportedOperation`.
 - Registry registration, duplicate rejection and capability filtering.
 
 Provider crates own their expected capability list. Core does not import provider crates or hardcode provider names.
