@@ -29,11 +29,11 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Bump workspace version
+      - name: Bump crate version
         run: |
           cargo install cargo-edit --locked
-          cargo set-version --workspace "${{ steps.plan.outputs.version }}"
-          cargo update --workspace --offline || cargo update --workspace
+          cargo set-version "${{ steps.plan.outputs.version }}"
+          cargo update --offline || cargo update
 
       - name: Install git-cliff
         uses: taiki-e/install-action@8f531eaecd1898bc3da7d104ad91bee98d1b97bd

@@ -19,8 +19,8 @@ Bitbucket pull requests are modeled as universal code reviews. Bitbucket issues 
 GitHub and GitLab issue clients hydrate provider responses into provider-neutral `Issue` resources.
 
 ```rust
-use git_cognition_core::IssuesFluent;
-use git_cognition_github::github;
+use git_cognition::IssuesFluent;
+use git_cognition::github::github;
 
 let repo = github()
     .repo()
@@ -60,8 +60,8 @@ The fluent operation names are the action names: `create`, `update`, `close` and
 Code reviews normalize GitHub pull requests, GitLab merge requests and Bitbucket pull requests behind the `CodeReview` resource.
 
 ```rust
-use git_cognition_core::CodeReviewsFluent;
-use git_cognition_gitlab::gitlab;
+use git_cognition::CodeReviewsFluent;
+use git_cognition::gitlab::gitlab;
 
 let repo = gitlab()
     .repo()
@@ -112,8 +112,8 @@ GitLab merge request deletion is available through `delete`. GitHub and Bitbucke
 GitHub and GitLab releases hydrate into the universal `Release` resource.
 
 ```rust
-use git_cognition_core::ReleasesFluent;
-use git_cognition_github::github;
+use git_cognition::ReleasesFluent;
+use git_cognition::github::github;
 
 let repo = github()
     .repo()

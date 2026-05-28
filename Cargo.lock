@@ -199,47 +199,8 @@ dependencies = [
 name = "git-cognition"
 version = "0.1.0"
 dependencies = [
- "git-cognition-bitbucket",
- "git-cognition-core",
- "git-cognition-github",
- "git-cognition-gitlab",
-]
-
-[[package]]
-name = "git-cognition-bitbucket"
-version = "0.1.0"
-dependencies = [
- "futures",
- "git-cognition-core",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "git-cognition-core"
-version = "0.1.0"
-dependencies = [
  "futures",
  "reqwest",
- "serde",
-]
-
-[[package]]
-name = "git-cognition-github"
-version = "0.1.0"
-dependencies = [
- "futures",
- "git-cognition-core",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "git-cognition-gitlab"
-version = "0.1.0"
-dependencies = [
- "futures",
- "git-cognition-core",
  "serde",
  "serde_json",
 ]

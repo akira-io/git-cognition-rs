@@ -1,6 +1,6 @@
 # Errors
 
-Errors are provider-neutral contracts owned by `git-cognition-core`.
+Errors are provider-neutral contracts owned by `git-cognition`.
 
 Provider crates must map native provider failures into `CognitionError` before returning results to applications. They must not expose raw HTTP client errors, provider payloads, or provider-specific error names through public contracts.
 

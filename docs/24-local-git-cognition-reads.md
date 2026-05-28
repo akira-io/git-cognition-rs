@@ -1,6 +1,6 @@
 # Local Git Cognition Reads
 
-`git-cognition-core::cognition().local()` exposes local Git operations separately from HTTP providers. Use this
+`git-cognition::cognition().local()` exposes local Git operations separately from HTTP providers. Use this
 surface for repository cognition features that need commit history, diffs, blame, worktrees, status,
 or merge previews.
 
@@ -10,7 +10,7 @@ It shells out to the local `git` binary and returns normalized Rust resources. M
 ## Repository
 
 ```rust
-use git_cognition_core::cognition;
+use git_cognition::cognition;
 
 let repository = cognition().local().repo("/workspace/project");
 
@@ -24,7 +24,7 @@ let is_clone = repository.is_valid_clone();
 Local capabilities are separate from remote provider capabilities.
 
 ```rust
-use git_cognition_core::{cognition, LocalGitCapability};
+use git_cognition::{cognition, LocalGitCapability};
 
 let capabilities = cognition().local().repo("/workspace/project").capabilities();
 
@@ -194,7 +194,7 @@ A single flow combining log, diff, blame and merge-base to inspect what a featur
 introduced relative to the trunk:
 
 ```rust
-use git_cognition_core::{LineOrigin, cognition};
+use git_cognition::{LineOrigin, cognition};
 
 let repository = cognition().local().repo("/workspace/project");
 
