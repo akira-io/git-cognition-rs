@@ -1,6 +1,4 @@
-use vcs_provider_core::{
-    ManagedCodeReviewProvider, ManagedIssueProvider, ManagedReleaseProvider,
-};
+use vcs_provider_core::{ManagedCodeReviewProvider, ManagedIssueProvider, ManagedReleaseProvider};
 
 use crate::{
     GitLabCodeReview, GitLabCodeReviewCollection, GitLabIssue, GitLabIssueCollection,

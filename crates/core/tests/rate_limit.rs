@@ -1,6 +1,4 @@
-use vcs_provider_core::{
-    Transport, provider_response, rate_limit, request, response, run_async_test,
-};
+use vcs_provider_core::{Transport, rate_limit, request, response, run_async_test, test_transport};
 
 #[test]
 fn rate_limit_profile_reads_configured_headers() {
@@ -77,15 +75,15 @@ fn rate_limit_profile_matches_headers_case_insensitively() {
 fn rate_limit_transport_records_configured_headers() -> vcs_provider_core::VcsResult<()> {
     run_async_test(async {
         let recorder = rate_limit().recorder();
+        let response_transport = test_transport()
+            .response()
+            .header("x-ratelimit-remaining", "42")
+            .header("x-ratelimit-reset", "1710000000")
+            .header("retry-after", "30")
+            .body(r#"{"ok":true}"#)
+            .get();
         let transport = rate_limit()
-            .transport(
-                provider_response()
-                    .header("x-ratelimit-remaining", "42")
-                    .header("x-ratelimit-reset", "1710000000")
-                    .header("retry-after", "30")
-                    .body(r#"{"ok":true}"#)
-                    .get(),
-            )
+            .transport(response_transport)
             .remaining(["x-ratelimit-remaining"])
             .reset_at(["x-ratelimit-reset"])
             .retry_after(["retry-after"])
