@@ -48,8 +48,8 @@ share contracts or transport.
 ## Quickstart
 
 ```rust
-use git_cognition_core::{cognition, repo};
-use git_cognition_github::github;
+use git_cognition::{cognition, repo};
+use git_cognition::github::github;
 
 // Remote plane
 let repository = cognition().provider(github())

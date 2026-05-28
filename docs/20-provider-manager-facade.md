@@ -3,8 +3,8 @@
 `cognition().provider(driver)` is the provider manager facade for request construction. It keeps core provider-neutral while allowing application code to choose GitHub, GitLab, Bitbucket, or a future provider at the edge.
 
 ```rust
-use git_cognition_core::cognition;
-use git_cognition_gitlab::gitlab;
+use git_cognition::cognition;
+use git_cognition::gitlab::gitlab;
 
 let repo = cognition().provider(gitlab())
     .repo()
@@ -40,19 +40,19 @@ Provider-specific path rules stay inside the provider crate:
 Providers keep their public defaults, but applications can pass an explicit API base URL when they target an enterprise, self-managed, or compatible deployment.
 
 ```rust
-let github_repository = cognition().provider(git_cognition_github::github().base_url("https://github.enterprise.test/api/v3"))
+let github_repository = cognition().provider(git_cognition::github::github().base_url("https://github.enterprise.test/api/v3"))
     .repo()
     .owner("akira-io")
     .name("git-cognition-rs")
     .get();
 
-let gitlab_repository = cognition().provider(git_cognition_gitlab::gitlab().base_url("https://gitlab.internal.example"))
+let gitlab_repository = cognition().provider(git_cognition::gitlab::gitlab().base_url("https://gitlab.internal.example"))
     .repo()
     .owner("akira-io")
     .name("git-cognition-rs")
     .get();
 
-let bitbucket_repository = cognition().provider(git_cognition_bitbucket::bitbucket().base_url("https://bitbucket.internal.example/rest"))
+let bitbucket_repository = cognition().provider(git_cognition::bitbucket::bitbucket().base_url("https://bitbucket.internal.example/rest"))
     .repo()
     .owner("akira-io")
     .name("git-cognition-rs")
@@ -91,7 +91,7 @@ Mutation builders are also reached from the selected facade.
 let request = cognition().provider(gitlab())
     .repo()
     .draft(repo)
-    .visibility(git_cognition_core::Visibility::Private)
+    .visibility(git_cognition::Visibility::Private)
     .create();
 ```
 
@@ -102,8 +102,8 @@ The terminal method describes the command being built: `create`, `update`, `dele
 The same facade can configure a provider client and execute hydrated contracts through the shared transport abstraction:
 
 ```rust
-use git_cognition_core::{auth, cognition, http, repo};
-use git_cognition_github::github;
+use git_cognition::{auth, cognition, http, repo};
+use git_cognition::github::github;
 
 let repository = cognition().provider(github())
     .transport(http().transport().get()?)
@@ -137,7 +137,7 @@ The driver is still selected once at the edge. The provider crate owns the concr
 
 ## Dependency Boundary
 
-`cognition().provider(driver)` lives in `git-cognition-core`, but it receives the driver from the application. Core does not import provider crates and providers do not register themselves globally.
+`cognition().provider(driver)` lives in `git-cognition`, but it receives the driver from the application. Core does not import provider crates and providers do not register themselves globally.
 
 This keeps provider addition open-ended:
 

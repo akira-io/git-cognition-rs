@@ -1,20 +1,25 @@
 # Architecture
 
-The Rust implementation is centered on one provider-neutral `core` crate and one crate per provider.
+`git-cognition` is a single Rust crate organized into a provider-neutral substrate plus optional
+provider drivers behind feature flags.
 
 ```text
 Application
     |
     v
-git-cognition-core contracts
+git-cognition (single crate)
     |
-    v
-provider crates
+    +-- core surface       (always compiled)
+    |
+    +-- github driver       #[cfg(feature = "github")]    (default)
+    +-- gitlab driver       #[cfg(feature = "gitlab")]
+    +-- bitbucket driver    #[cfg(feature = "bitbucket")]
 ```
 
-## Core
+## Core surface
 
-`git-cognition-core` owns shared contracts and domain primitives:
+The crate root owns shared contracts and domain primitives, always compiled regardless of feature
+selection:
 
 - Provider contracts.
 - Capability negotiation.
@@ -26,23 +31,25 @@ provider crates
 - Middleware contracts.
 - Telemetry contracts.
 
-Core never depends on provider crates.
+The core surface never references a provider driver.
 
-## Providers
+## Provider drivers
 
-Provider crates implement core contracts:
+Each provider lives in its own module behind a feature flag:
 
-- `git-cognition-github`
-- `git-cognition-gitlab`
-- `git-cognition-bitbucket`
+- `git_cognition::github` (feature `github`, default)
+- `git_cognition::gitlab` (feature `gitlab`)
+- `git_cognition::bitbucket` (feature `bitbucket`)
 
-Providers depend on `git-cognition-core`. Provider crates own provider-specific defaults, terminology mapping, endpoint behavior, payload mapping, and extensions.
+Driver modules implement the core contracts. They own provider-specific defaults, terminology
+mapping, endpoint behavior, payload mapping, and extensions.
 
-Adding a new provider must not require editing `git-cognition-core`.
+Adding a new provider must not require touching the core surface; it goes in as a new module
+behind a new feature flag.
 
 ## Provider Contract
 
-Every provider crate exposes a type implementing `Provider`.
+Every provider module exposes a type implementing `Provider`.
 
 The provider describes:
 
@@ -53,7 +60,8 @@ The provider describes:
 - Default endpoint.
 - Supported authentication modes.
 
-Applications and managers consume providers through `Provider`, not through concrete provider types.
+Applications and managers consume providers through `Provider`, not through concrete provider
+types.
 
 ## Repos Contract
 
@@ -67,9 +75,13 @@ It exposes:
 - `branches`
 - `commits`
 
-The contract is async-first and object-safe. Provider crates return futures through the shared `BoxFuture` type, so applications can consume repository operations through trait objects without depending on provider-specific types.
+The contract is async-first and object-safe. Provider modules return futures through the shared
+`BoxFuture` type, so applications can consume repository operations through trait objects without
+depending on provider-specific types.
 
-Provider crates own the mapping from provider endpoints to universal `Repository`, `Branch`, and `Commit` resources. Until transport is configured, repos return `CognitionError::TransportNotConfigured` instead of generating placeholder data.
+Provider modules own the mapping from provider endpoints to universal `Repository`, `Branch`, and
+`Commit` resources. Until transport is configured, repos return
+`CognitionError::TransportNotConfigured` instead of generating placeholder data.
 
 ## Registry Contract
 
@@ -79,26 +91,29 @@ Applications compose the registry explicitly:
 
 ```rust
 let registry = provider()
-    .register(git_cognition_github::github())?
-    .register(git_cognition_gitlab::gitlab())?
-    .register(git_cognition_bitbucket::bitbucket())?
+    .register(git_cognition::github::github())?
+    .register(git_cognition::gitlab::gitlab())?
+    .register(git_cognition::bitbucket::bitbucket())?
     .build();
 ```
 
-The registry lives in `core`, but it never imports provider crates. Applications decide which providers to register.
+The registry lives in the core surface and never references a provider driver directly.
+Applications decide which providers to register.
 
 ## Dependency Rules
 
-- `core` does not depend on providers.
-- Providers depend on `core`.
-- Provider-specific logic stays inside provider crates.
-- Transport contracts live in `core`; concrete HTTP transport must not leak provider payloads or HTTP client types.
-- Resources, errors, capabilities, auth, middleware, pagination, and telemetry stay provider-neutral.
+- The core surface does not depend on driver modules.
+- Driver modules depend on the core surface.
+- Provider-specific logic stays inside driver modules.
+- Transport contracts live in the core surface; concrete HTTP transport must not leak provider
+  payloads or HTTP client types.
+- Resources, errors, capabilities, auth, middleware, pagination, and telemetry stay
+  provider-neutral.
 
 ## Local Git Plane
 
-`git-cognition-core` also exposes a local Git plane through `cognition().local()` (and the
-`git()` shortcut). This plane is independent of the provider plane:
+`git-cognition` also exposes a local Git plane through `cognition().local()` (and the `git()`
+shortcut). This plane is independent of the provider plane and needs no feature flag:
 
 ```text
 Application
@@ -115,7 +130,7 @@ The capability namespace is `LocalGitCapability`, separate from `Capability`. Se
 combined provider + local flow.
 
 ```rust
-use git_cognition_core::cognition;
+use git_cognition::cognition;
 
 let repository = cognition().local().repo("/workspace/project");
 let head = repository.show("HEAD").file("README.md")?;

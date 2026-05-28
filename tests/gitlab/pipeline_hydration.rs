@@ -1,0 +1,55 @@
+use git_cognition::gitlab::gitlab;
+use git_cognition::{PipelinesFluent, Repo, repo, run_async_test};
+
+#[test]
+fn gitlab_client_hydrates_pipeline_get_and_list() -> git_cognition::CognitionResult<()> {
+    run_async_test(async {
+        let pipeline_resource = gitlab()
+            .body(r#"{"id":42}"#)
+            .pipelines()
+            .location(repository_location())
+            .id("42")
+            .get()
+            .await?;
+        let pipeline_page = gitlab()
+            .body(r#"[{"id":42}]"#)
+            .pipelines()
+            .location(repository_location())
+            .list()
+            .await?;
+
+        assert_eq!(pipeline_resource.id().as_str(), "42");
+        assert_eq!(pipeline_page.items()[0].id().as_str(), "42");
+
+        Ok(())
+    })
+}
+
+#[test]
+fn gitlab_client_hydrates_pipeline_commands() -> git_cognition::CognitionResult<()> {
+    run_async_test(async {
+        let retried_pipeline = gitlab()
+            .body(r#"{"id":42}"#)
+            .pipelines()
+            .location(repository_location())
+            .id("42")
+            .rerun()
+            .await?;
+        let canceled_pipeline = gitlab()
+            .body(r#"{"id":42}"#)
+            .pipelines()
+            .location(repository_location())
+            .id("42")
+            .cancel()
+            .await?;
+
+        assert_eq!(retried_pipeline.id().as_str(), "42");
+        assert_eq!(canceled_pipeline.id().as_str(), "42");
+
+        Ok(())
+    })
+}
+
+fn repository_location() -> Repo {
+    repo().owner("akira-io").name("git-cognition-rs").get()
+}

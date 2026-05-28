@@ -49,8 +49,8 @@ action or calling an operation. Unsupported operations must surface
 calls inside the app.
 
 ```rust
-use git_cognition_core::{Capability, cognition};
-use git_cognition_bitbucket::bitbucket;
+use git_cognition::{Capability, cognition};
+use git_cognition::bitbucket::bitbucket;
 
 let provider = bitbucket();
 
@@ -61,7 +61,7 @@ if provider.capabilities().supports(&Capability::Releases) {
 }
 
 // Local plane has its own capability set, separate from the remote one above.
-use git_cognition_core::LocalGitCapability;
+use git_cognition::LocalGitCapability;
 
 let local = cognition().local().repo("/workspace/project");
 if local.capabilities().supports(&LocalGitCapability::MergePreview) {

@@ -7,8 +7,8 @@ This guide shows the main application flow for `git-cognition-rs`: choose a prov
 Applications select the provider at the edge. Core does not import provider crates.
 
 ```rust
-use git_cognition_core::cognition;
-use git_cognition_gitlab::gitlab;
+use git_cognition::cognition;
+use git_cognition::gitlab::gitlab;
 
 let repository = cognition().provider(gitlab())
     .repo()
@@ -22,13 +22,13 @@ let url = repository.url();
 Use the same shape for GitHub and Bitbucket:
 
 ```rust
-let github_repository = git_cognition_core::cognition().provider(git_cognition_github::github())
+let github_repository = git_cognition::cognition().provider(git_cognition::github::github())
     .repo()
     .owner("akira-io")
     .name("git-cognition-rs")
     .get();
 
-let bitbucket_repository = git_cognition_core::cognition().provider(git_cognition_bitbucket::bitbucket())
+let bitbucket_repository = git_cognition::cognition().provider(git_cognition::bitbucket::bitbucket())
     .repo()
     .owner("akira-io")
     .name("git-cognition-rs")
@@ -40,8 +40,8 @@ let bitbucket_repository = git_cognition_core::cognition().provider(git_cognitio
 Provider clients execute requests through the universal transport contract. The provider owns URL construction, default headers, auth mapping, and response mapping.
 
 ```rust
-use git_cognition_core::{auth, cognition, http, repo};
-use git_cognition_github::github;
+use git_cognition::{auth, cognition, http, repo};
+use git_cognition::github::github;
 
 let repository = cognition().provider(github())
     .transport(http().transport().get()?)
@@ -71,14 +71,14 @@ Use `github().base_url("https://github.enterprise.test/api/v3")` for GitHub Ente
 Middleware wraps transport, not domain logic. Each request still enters the same provider client and mapper path.
 
 ```rust
-use git_cognition_core::{cognition, http, middleware, repo};
+use git_cognition::{cognition, http, middleware, repo};
 
 let transport = middleware()
     .header("x-request-id", "request-1")
     .transport(http().transport().get()?)
     .build();
 
-let repository = cognition().provider(git_cognition_gitlab::gitlab())
+let repository = cognition().provider(git_cognition::gitlab::gitlab())
     .transport(transport)
     .repos()
     .get(repo().owner("akira-io").name("git-cognition-rs").get())
@@ -113,7 +113,7 @@ let created = cognition().provider(gitlab())
     .repos()
     .create()
     .location(location.clone())
-    .visibility(git_cognition_core::Visibility::Private)
+    .visibility(git_cognition::Visibility::Private)
     .create()
     .await?;
 
@@ -166,8 +166,8 @@ Bitbucket supports code reviews and pipelines in the current universal capabilit
 Provider crates can attach response fixtures directly to the provider facade to verify hydration without real HTTP:
 
 ```rust
-use git_cognition_core::{repo, run_async_test};
-use git_cognition_github::github;
+use git_cognition::{repo, run_async_test};
+use git_cognition::github::github;
 
 run_async_test(async {
     let repository = github()
@@ -214,7 +214,7 @@ let transport = github()
 Do not assume every provider supports every resource.
 
 ```rust
-use git_cognition_core::Capability;
+use git_cognition::Capability;
 
 if github().capabilities().supports(&Capability::Releases) {
     github().releases();
@@ -223,7 +223,7 @@ if github().capabilities().supports(&Capability::Releases) {
 
 Runtime capability checks are part of the public contract. Provider-specific features should stay in provider crates or extensions.
 
-Capabilities describe framework-supported universal contracts, not every upstream provider endpoint. A provider can have native webhooks or organization APIs without exposing those capabilities until `git-cognition-core` has typed contracts for them.
+Capabilities describe framework-supported universal contracts, not every upstream provider endpoint. A provider can have native webhooks or organization APIs without exposing those capabilities until `git-cognition` has typed contracts for them.
 
 ## Local Git Plane
 
@@ -231,7 +231,7 @@ The same `cognition()` entry exposes a local Git plane that does not use HTTP tr
 provider drivers. Use it for repository cognition features that read the local object database:
 
 ```rust
-use git_cognition_core::cognition;
+use git_cognition::cognition;
 
 let repository = cognition().local().repo("/workspace/project");
 
@@ -244,8 +244,8 @@ Provider and local planes compose in one flow. Pull repository metadata over HTT
 local history that backs it:
 
 ```rust
-use git_cognition_core::{cognition, repo};
-use git_cognition_github::github;
+use git_cognition::{cognition, repo};
+use git_cognition::github::github;
 
 let location = repo().owner("akira-io").name("git-cognition-rs").get();
 let metadata = cognition().provider(github())

@@ -1,0 +1,63 @@
+use git_cognition::github::{DISPLAY_NAME, PROVIDER_ID, github};
+use git_cognition::{AuthHeaderStyle, AuthKind, Capability, CognitionResult, conformance};
+
+#[test]
+fn github_provider_passes_common_conformance_suite() -> CognitionResult<()> {
+    conformance()
+        .provider(github())
+        .id(PROVIDER_ID)
+        .display_name(DISPLAY_NAME)
+        .supports([
+            Capability::Authentication,
+            Capability::AuthenticationValidate,
+            Capability::Repos,
+            Capability::RepoGet,
+            Capability::RepoList,
+            Capability::RepoSearch,
+            Capability::RepoBranches,
+            Capability::RepoBranchCreate,
+            Capability::RepoBranchDelete,
+            Capability::RepoCommits,
+            Capability::RepoCreate,
+            Capability::RepoUpdate,
+            Capability::RepoDelete,
+            Capability::Issues,
+            Capability::IssueGet,
+            Capability::IssueList,
+            Capability::IssueCreate,
+            Capability::IssueUpdate,
+            Capability::IssueClose,
+            Capability::CodeReviews,
+            Capability::CodeReviewGet,
+            Capability::CodeReviewList,
+            Capability::CodeReviewCreate,
+            Capability::CodeReviewUpdate,
+            Capability::CodeReviewMerge,
+            Capability::CodeReviewClose,
+            Capability::Pipelines,
+            Capability::PipelineGet,
+            Capability::PipelineList,
+            Capability::PipelineRerun,
+            Capability::PipelineCancel,
+            Capability::Releases,
+            Capability::ReleaseGet,
+            Capability::ReleaseList,
+            Capability::ReleaseCreate,
+            Capability::ReleaseUpdate,
+            Capability::ReleaseDelete,
+            Capability::Organizations,
+            Capability::OrganizationList,
+        ])
+        .does_not_support([
+            Capability::IssueDelete,
+            Capability::CodeReviewDelete,
+            Capability::Discussions,
+            Capability::Webhooks,
+            Capability::SelfHosted,
+        ])
+        .auth(
+            AuthKind::PersonalAccessToken,
+            AuthHeaderStyle::AuthorizationBearer,
+        )
+        .check()
+}

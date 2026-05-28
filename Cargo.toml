@@ -1,34 +1,34 @@
-[workspace]
-members = [
-    "crates/core",
-    "crates/github",
-    "crates/gitlab",
-    "crates/bitbucket",
-    "crates/git-cognition",
-]
-resolver = "3"
-
-[workspace.package]
+[package]
+name = "git-cognition"
+description = "Universal VCS provider contracts and a local Git read surface for Rust, in one crate."
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/akira-io/git-cognition-rs"
 rust-version = "1.89"
 version = "0.1.0"
+readme = "README.md"
+keywords = ["git", "vcs", "cognition", "github", "gitlab"]
+categories = ["development-tools", "api-bindings"]
+publish = true
 
-[workspace.dependencies]
+[dependencies]
 futures = "0.3.31"
 reqwest = { version = "0.12.24", default-features = false, features = ["rustls-tls"] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
-git-cognition-core = { path = "crates/core", version = "0.1.0" }
-git-cognition-github = { path = "crates/github", version = "0.1.0" }
-git-cognition-gitlab = { path = "crates/gitlab", version = "0.1.0" }
-git-cognition-bitbucket = { path = "crates/bitbucket", version = "0.1.0" }
+serde_json = { version = "1.0.145", optional = true }
 
-[workspace.lints.rust]
+[features]
+default = ["github"]
+github = ["dep:serde_json"]
+gitlab = ["dep:serde_json"]
+bitbucket = ["dep:serde_json"]
+all = ["github", "gitlab", "bitbucket"]
+testing = []
+
+[lints.rust]
 unsafe_code = "forbid"
 
-[workspace.lints.clippy]
+[lints.clippy]
 expect_used = "deny"
 panic = "deny"
 todo = "deny"

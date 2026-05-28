@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  workspace:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -23,27 +23,32 @@ jobs:
           toolchain: 1.89.0
           components: clippy,rustfmt
       - run: cargo fmt --check
-      - run: cargo test
+      - run: cargo test --all-features
       - run: cargo clippy --all-targets --all-features -- -D warnings
 
-  providers:
-    runs-on: ${{ matrix.os }}
+  features:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
-        package:
-          - git-cognition-github
-          - git-cognition-gitlab
-          - git-cognition-bitbucket
+        features:
+          - ""
+          - github
+          - gitlab
+          - bitbucket
+          - all
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6
         with:
           toolchain: 1.89.0
-          components: clippy,rustfmt
-      - run: cargo test --package ${{ matrix.package }}
-      - run: cargo clippy --package ${{ matrix.package }} --all-targets --all-features -- -D warnings
+          components: clippy
+      - name: Build with features = ${{ matrix.features }}
+        run: |
+          if [ -z "${{ matrix.features }}" ]; then
+            cargo build --no-default-features
+          elif [ "${{ matrix.features }}" = "all" ]; then
+            cargo build --features all
+          else
+            cargo build --no-default-features --features ${{ matrix.features }}
+          fi

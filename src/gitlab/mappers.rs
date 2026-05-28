@@ -1,0 +1,341 @@
+use crate::{
+    Branch, CodeReview, CodeReviewResponseMapper, CognitionError, CognitionResult, Commit, Issue,
+    IssueResponseMapper, LifecycleState, Organization, OrganizationKind,
+    OrganizationResponseMapper, Page, Release, ReleaseResponseMapper, Repo, Repository,
+    RepositoryResponseMapper, Response, Visibility, error, pipeline, repo,
+};
+use crate::{Pipeline, PipelineResponseMapper};
+use serde::Deserialize;
+
+use super::PROVIDER_ID;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GitLabRepositoryMapper;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GitLabIssueMapper;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GitLabCodeReviewMapper;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GitLabReleaseMapper;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GitLabPipelineMapper;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GitLabOrganizationMapper;
+
+impl RepositoryResponseMapper for GitLabRepositoryMapper {
+    fn repository(
+        &self,
+        requested_repo: &Repo,
+        response: &Response,
+    ) -> CognitionResult<Repository> {
+        let repository_response = gitlab_repository(response)?;
+        let repository_repo = repository_response
+            .repo()
+            .unwrap_or_else(|| requested_repo.clone());
+
+        Ok(repository(repository_repo, repository_response))
+    }
+
+    fn repositories(&self, response: &Response) -> CognitionResult<Page<Repository>> {
+        let repositories = gitlab_repositories(response)?
+            .into_iter()
+            .filter_map(|repository_response| {
+                repository_response
+                    .repo()
+                    .map(|repository_repo| repository(repository_repo, repository_response))
+            })
+            .collect();
+
+        Ok(page(repositories, response))
+    }
+
+    fn branches(&self, response: &Response) -> CognitionResult<Page<Branch>> {
+        let branches = parse_body::<Vec<GitLabBranch>>(response, "invalid gitlab branch response")?
+            .into_iter()
+            .map(|branch| Branch::make(branch.name))
+            .collect();
+
+        Ok(page(branches, response))
+    }
+
+    fn branch(&self, response: &Response) -> CognitionResult<Branch> {
+        let branch = parse_body::<GitLabBranch>(response, "invalid gitlab branch response")?;
+
+        Ok(Branch::make(branch.name))
+    }
+
+    fn commits(&self, response: &Response) -> CognitionResult<Page<Commit>> {
+        let commits = parse_body::<Vec<GitLabCommit>>(response, "invalid gitlab commit response")?
+            .into_iter()
+            .map(|commit| Commit::make(commit.id))
+            .collect();
+
+        Ok(page(commits, response))
+    }
+}
+
+impl IssueResponseMapper for GitLabIssueMapper {
+    fn issue(&self, requested_issue: &Issue, response: &Response) -> CognitionResult<Issue> {
+        let issue = parse_body::<GitLabIssue>(response, "invalid gitlab issue response")?;
+
+        Ok(crate::issue()
+            .repo(requested_issue.repo().clone())
+            .id(issue.iid.to_string())
+            .get())
+    }
+
+    fn issues(&self, requested_repo: &Repo, response: &Response) -> CognitionResult<Page<Issue>> {
+        let issues =
+            parse_body::<Vec<GitLabIssue>>(response, "invalid gitlab issue list response")?
+                .into_iter()
+                .map(|issue| {
+                    crate::issue()
+                        .repo(requested_repo.clone())
+                        .id(issue.iid.to_string())
+                        .get()
+                })
+                .collect();
+
+        Ok(page(issues, response))
+    }
+}
+
+impl CodeReviewResponseMapper for GitLabCodeReviewMapper {
+    fn code_review(
+        &self,
+        requested_code_review: &CodeReview,
+        response: &Response,
+    ) -> CognitionResult<CodeReview> {
+        let code_review =
+            parse_body::<GitLabCodeReview>(response, "invalid gitlab code review response")?;
+
+        Ok(crate::code_review()
+            .repo(requested_code_review.repo().clone())
+            .id(code_review.iid.to_string())
+            .get())
+    }
+
+    fn code_reviews(
+        &self,
+        requested_repo: &Repo,
+        response: &Response,
+    ) -> CognitionResult<Page<CodeReview>> {
+        let code_reviews = parse_body::<Vec<GitLabCodeReview>>(
+            response,
+            "invalid gitlab code review list response",
+        )?
+        .into_iter()
+        .map(|code_review| {
+            crate::code_review()
+                .repo(requested_repo.clone())
+                .id(code_review.iid.to_string())
+                .get()
+        })
+        .collect();
+
+        Ok(page(code_reviews, response))
+    }
+}
+
+impl ReleaseResponseMapper for GitLabReleaseMapper {
+    fn release(
+        &self,
+        requested_release: &Release,
+        response: &Response,
+    ) -> CognitionResult<Release> {
+        let release = parse_body::<GitLabRelease>(response, "invalid gitlab release response")?;
+
+        Ok(crate::release()
+            .repo(requested_release.repo().clone())
+            .id(release.tag_name)
+            .get())
+    }
+
+    fn releases(
+        &self,
+        requested_repo: &Repo,
+        response: &Response,
+    ) -> CognitionResult<Page<Release>> {
+        let releases =
+            parse_body::<Vec<GitLabRelease>>(response, "invalid gitlab release list response")?
+                .into_iter()
+                .map(|release| {
+                    crate::release()
+                        .repo(requested_repo.clone())
+                        .id(release.tag_name)
+                        .get()
+                })
+                .collect();
+
+        Ok(page(releases, response))
+    }
+}
+
+impl PipelineResponseMapper for GitLabPipelineMapper {
+    fn pipeline(
+        &self,
+        requested_pipeline: &Pipeline,
+        response: &Response,
+    ) -> CognitionResult<Pipeline> {
+        let pipeline = parse_body::<GitLabPipeline>(response, "invalid gitlab pipeline response")?;
+
+        Ok(crate::pipeline()
+            .repo(requested_pipeline.repo().clone())
+            .id(pipeline.id.to_string())
+            .get())
+    }
+
+    fn pipelines(
+        &self,
+        requested_repo: &Repo,
+        response: &Response,
+    ) -> CognitionResult<Page<Pipeline>> {
+        let pipelines =
+            parse_body::<Vec<GitLabPipeline>>(response, "invalid gitlab pipeline list response")?
+                .into_iter()
+                .map(|pipeline_response| {
+                    pipeline()
+                        .repo(requested_repo.clone())
+                        .id(pipeline_response.id.to_string())
+                        .get()
+                })
+                .collect();
+
+        Ok(page(pipelines, response))
+    }
+}
+
+impl OrganizationResponseMapper for GitLabOrganizationMapper {
+    fn organizations(&self, response: &Response) -> CognitionResult<Page<Organization>> {
+        let organizations =
+            parse_body::<Vec<GitLabGroup>>(response, "invalid gitlab group response")?
+                .into_iter()
+                .map(|group| {
+                    Organization::make(
+                        PROVIDER_ID,
+                        group.id.to_string(),
+                        group.full_path,
+                        OrganizationKind::Organization,
+                    )
+                })
+                .collect();
+
+        Ok(page(organizations, response))
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabRepository {
+    path_with_namespace: Option<String>,
+    visibility: Option<String>,
+    archived: Option<bool>,
+}
+
+impl GitLabRepository {
+    fn repo(&self) -> Option<Repo> {
+        parse_repository_path(self.path_with_namespace.as_deref())
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabBranch {
+    name: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabCommit {
+    id: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabIssue {
+    iid: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabCodeReview {
+    iid: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabRelease {
+    tag_name: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabPipeline {
+    id: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct GitLabGroup {
+    id: u64,
+    full_path: String,
+}
+
+fn gitlab_repository(response: &Response) -> CognitionResult<GitLabRepository> {
+    parse_body(response, "invalid gitlab repository response")
+}
+
+fn gitlab_repositories(response: &Response) -> CognitionResult<Vec<GitLabRepository>> {
+    parse_body(response, "invalid gitlab repository list response")
+}
+
+fn repository(repository_repo: Repo, repository_response: GitLabRepository) -> Repository {
+    repo()
+        .owner(repository_repo.owner().as_str())
+        .name(repository_repo.name().as_str())
+        .provider(PROVIDER_ID)
+        .visibility(visibility(repository_response.visibility.as_deref()))
+        .lifecycle(lifecycle_state(
+            repository_response.archived.unwrap_or_default(),
+        ))
+        .get()
+}
+
+fn visibility(provider_visibility: Option<&str>) -> Visibility {
+    match provider_visibility {
+        Some("private") => Visibility::Private,
+        Some("internal") => Visibility::Internal,
+        _ => Visibility::Public,
+    }
+}
+
+fn lifecycle_state(is_archived: bool) -> LifecycleState {
+    if is_archived {
+        return LifecycleState::Archived;
+    }
+
+    LifecycleState::Active
+}
+
+fn parse_repository_path(repository_path: Option<&str>) -> Option<Repo> {
+    let (owner_name, repository_name) = repository_path?.rsplit_once('/')?;
+
+    Some(repo().owner(owner_name).name(repository_name).get())
+}
+
+fn parse_body<'a, T>(response: &'a Response, message: &str) -> CognitionResult<T>
+where
+    T: Deserialize<'a>,
+{
+    let response_body = response.body().ok_or_else(|| invalid_response(message))?;
+
+    serde_json::from_str(response_body.as_str()).map_err(|_parse_error| invalid_response(message))
+}
+
+fn invalid_response(message: &str) -> CognitionError {
+    error().invalid_input(message)
+}
+
+fn page<T>(items: Vec<T>, response: &Response) -> Page<T> {
+    crate::pagination()
+        .page(items)
+        .optional_next(super::pagination::next_cursor(response))
+        .build()
+}

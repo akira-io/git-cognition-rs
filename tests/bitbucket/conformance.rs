@@ -1,0 +1,60 @@
+use git_cognition::bitbucket::{DISPLAY_NAME, PROVIDER_ID, bitbucket};
+use git_cognition::{AuthHeaderStyle, AuthKind, Capability, CognitionResult, conformance};
+
+#[test]
+fn bitbucket_provider_passes_common_conformance_suite() -> CognitionResult<()> {
+    conformance()
+        .provider(bitbucket())
+        .id(PROVIDER_ID)
+        .display_name(DISPLAY_NAME)
+        .supports([
+            Capability::Authentication,
+            Capability::AuthenticationValidate,
+            Capability::Organizations,
+            Capability::OrganizationList,
+            Capability::Repos,
+            Capability::RepoGet,
+            Capability::RepoList,
+            Capability::RepoSearch,
+            Capability::RepoBranches,
+            Capability::RepoBranchCreate,
+            Capability::RepoBranchDelete,
+            Capability::RepoCommits,
+            Capability::RepoCreate,
+            Capability::RepoUpdate,
+            Capability::RepoDelete,
+            Capability::Issues,
+            Capability::IssueGet,
+            Capability::IssueList,
+            Capability::IssueCreate,
+            Capability::IssueUpdate,
+            Capability::IssueClose,
+            Capability::IssueDelete,
+            Capability::CodeReviews,
+            Capability::CodeReviewGet,
+            Capability::CodeReviewList,
+            Capability::CodeReviewCreate,
+            Capability::CodeReviewUpdate,
+            Capability::CodeReviewMerge,
+            Capability::CodeReviewClose,
+            Capability::Pipelines,
+            Capability::PipelineGet,
+            Capability::PipelineList,
+            Capability::PipelineCancel,
+        ])
+        .does_not_support([
+            Capability::Releases,
+            Capability::ReleaseGet,
+            Capability::ReleaseList,
+            Capability::ReleaseCreate,
+            Capability::ReleaseUpdate,
+            Capability::ReleaseDelete,
+            Capability::Discussions,
+            Capability::Webhooks,
+            Capability::SelfHosted,
+            Capability::CodeReviewDelete,
+            Capability::PipelineRerun,
+        ])
+        .auth(AuthKind::OAuth, AuthHeaderStyle::AuthorizationBearer)
+        .check()
+}
